@@ -1,0 +1,22 @@
+[tool.poetry]
+name = "cgap-gene-annotation"
+version = "0.1.0"
+description = ""
+authors = ["Your Name <you@example.com>"]
+
+[tool.poetry.dependencies]
+biopython = "^1.79"
+python = "^3.6.2"
+black = "^21.9b0"
+
+[tool.poetry.dev-dependencies]
+flake8 = "^3.9.2"
+pylint = "^2.11"
+pytest = "^5.2"
+
+[tool.poetry.scripts]
+add_annotations = "cgap_gene_annotation.scripts.add_annotations:main"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
