@@ -24,7 +24,7 @@ class TSVParser:
         header=None,
         header_line=None,
         comment_characters="#",
-        empty_fields=tuple(""),
+        empty_fields=tuple([""]),
         list_identifier=None,
         strip_characters=(" '" + '"'),
     ):
