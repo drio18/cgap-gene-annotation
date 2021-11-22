@@ -8,6 +8,7 @@ authors = ["Your Name <you@example.com>"]
 biopython = "^1.79"
 python = "^3.6.2"
 black = "^21.9b0"
+jsonschema = "3.2.0"
 
 [tool.poetry.dev-dependencies]
 flake8 = "^3.9.2"
@@ -15,7 +16,9 @@ pylint = "^2.11"
 pytest = "^5.2"
 
 [tool.poetry.scripts]
-add_annotations = "cgap_gene_annotation.scripts.add_annotations:main"
+create_annotation = "cgap_gene_annotation.scripts.create_annotation:main"
+update_annotation = "cgap_gene_annotation.scripts.update_annotation:main"
+parse_file = "cgap_gene_annotation.scripts.parse_file:main"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

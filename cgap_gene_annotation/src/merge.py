@@ -1,5 +1,7 @@
 import logging
 
+from . import constants
+
 
 def nested_getter(item, fields_to_get):
     """"""
@@ -17,6 +19,7 @@ def nested_getter(item, fields_to_get):
     if isinstance(result, str):
         result = [result]
     return result
+
 
 class AnnotationMerge:
     """"""
@@ -42,19 +45,28 @@ class AnnotationMerge:
 
     def parse_merge_info(self, merge_info):
         """"""
-        merge_fields = merge_info.get("merge_fields", {})
-        primary_merge_fields = merge_fields.get("primary", [])
-        secondary_merge_fields = merge_fields.get("secondary", [])
-        new_to_existing_unique, existing_to_new_unique = self.convert_merge_type_to_bool(
-            merge_info.get("type", ("many", "many"))
+        primary_merge_fields = merge_info.get(constants.MERGE_PRIMARY_FIELDS, [])
+        secondary_merge_fields = merge_info.get(constants.MERGE_SECONDARY_FIELDS, [])
+        (
+            new_to_existing_unique,
+            existing_to_new_unique,
+        ) = self.convert_merge_type_to_bool(
+            merge_info.get(
+                constants.MERGE_CHOICE,
+                (constants.MERGE_CHOICE_MANY, constants.MERGE_CHOICE_MANY))
         )
-        return primary_merge_fields, secondary_merge_fields, existing_to_new_unique, new_to_existing_unique
+        return (
+            primary_merge_fields,
+            secondary_merge_fields,
+            existing_to_new_unique,
+            new_to_existing_unique,
+        )
 
     def convert_merge_type_to_bool(self, merge_type_tuple):
         """"""
         result = [False, False]
         for idx, merge_type in enumerate(merge_type_tuple):
-            if merge_type == "one":
+            if merge_type == constants.MERGE_CHOICE_ONE:
                 result[idx] = True
         return result
 
@@ -102,9 +114,7 @@ class AnnotationMerge:
             " prefix: %s" % self.prefix
         )
 
-    def join_annotations(
-        self, merge_fields
-    ):
+    def join_annotations(self, merge_fields):
         """"""
         existing_key, new_key = self.get_merge_fields(merge_fields)
         existing_indices = None
@@ -152,8 +162,12 @@ class AnnotationMerge:
             new_annotation_idx = new_value_map.get(value)
             if new_annotation_idx:
                 existing_annotation_idx = existing_value_map[value]
-                self.add_values_to_sets(existing_annotation_idx, new_annotation_idx, existing_to_new)
-                self.add_values_to_sets(new_annotation_idx, existing_annotation_idx, new_to_existing)
+                self.add_values_to_sets(
+                    existing_annotation_idx, new_annotation_idx, existing_to_new
+                )
+                self.add_values_to_sets(
+                    new_annotation_idx, existing_annotation_idx, new_to_existing
+                )
         return existing_to_new, new_to_existing
 
     @staticmethod
@@ -190,7 +204,9 @@ class AnnotationMerge:
     def add_merged_annotations(self):
         """"""
         pruned_new_to_existing, pruned_existing_to_new = self.prune_to_unique_edges()
-        existing_to_new_edges = self.existing_to_new_edges[0]
+        existing_to_new_edges = {}
+        if self.existing_to_new_edges:
+            existing_to_new_edges = self.existing_to_new_edges[0]
         for existing_node, new_nodes in existing_to_new_edges.items():
             existing_annotation = self.existing_annotation[existing_node]
             existing_annotation[self.prefix] = []
@@ -214,8 +230,12 @@ class AnnotationMerge:
         """"""
         pruned_existing_to_new = {}
         pruned_new_to_existing = {}
-        existing_to_new = self.existing_to_new_edges[0]
-        new_to_existing = self.new_to_existing_edges[0]
+        existing_to_new = {}
+        new_to_existing = {}
+        if self.existing_to_new_edges:
+            existing_to_new = self.existing_to_new_edges[0]
+        if self.new_to_existing_edges:
+            new_to_existing = self.new_to_existing_edges[0]
         if self.existing_to_new_unique:
             for key, value in existing_to_new.items():
                 if len(value) > 1:

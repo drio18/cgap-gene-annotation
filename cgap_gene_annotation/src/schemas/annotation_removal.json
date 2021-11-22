@@ -1,0 +1,16 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "id": "schemas/annotation_removal.json",
+    "title": "Annotation Removal",
+    "description": "Schema for Removal of Annotation Source",
+    "type": "object",
+    "required": [
+        "prefix"
+    ],
+    "additionalProperties": false,
+    "properties": {
+        "prefix": {
+            "$ref": "schemas/annotation_source.json#/properties/prefix"
+        }
+    }
+}

@@ -3,19 +3,20 @@ import re
 
 from Bio import SeqIO
 
+from .utils import open_file
+
 
 def get_lines(file_path):
     """"""
-    # TODO: Gzipped files and S3 files
-    try:
-        with open(file_path) as file_handle:
-            for line in file_handle:
-                yield line.strip()
-    except FileNotFoundError as error_msg:
-        logging.error(error_msg)
+    file_handle = open_file(file_path)
+    for handle in file_handle:
+        for line in handle:
+            yield line.strip()
+
 
 class TSVParser:
     """"""
+
     FIELD_SEPARATOR = "\t"
 
     def __init__(
@@ -88,6 +89,7 @@ class TSVParser:
 
 class CSVParser(TSVParser):
     """"""
+
     FIELD_SEPARATOR = ","
 
 
@@ -112,22 +114,24 @@ class GTFParser(TSVParser):
     ]
 
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, header=self.HEADER, **kwargs)
+        super().__init__(*args, header=self.HEADER, empty_fields=["."], **kwargs)
 
     def parse_entry(self, entry):
         """"""
-        fields = dict(zip(self.header, entry.split(self.FIELD_SEPARATOR)))
-        attributes = fields[self.ATTRIBUTE].split(self.ATTRIBUTE_SEPARATOR)
+        fields = {}
+        if entry:
+            fields = dict(zip(self.header, entry.split(self.FIELD_SEPARATOR)))
+        attributes = fields.get(self.ATTRIBUTE, "")
         if attributes:
+            attributes = attributes.split(self.ATTRIBUTE_SEPARATOR)
             parsed_attributes = {}
             for attribute in attributes:
                 attribute = attribute.strip()
                 if not attribute or (attribute in self.empty_fields):
                     continue
-                attribute_split = [
+                attribute_name, attribute_value = [
                     x.strip() for x in attribute.split(self.ATTRIBUTE_SPLIT) if x
                 ]
-                attribute_name, attribute_value = attribute_split
                 if attribute_name in parsed_attributes:
                     attribute_value = list(attribute_value)
                     previous_value = parsed_attributes[attribute_name]
@@ -144,6 +148,7 @@ class GenBankParser:
     """
     https://www.ncbi.nlm.nih.gov/Sitemap/samplerecord.html
     """
+
     # GenBank formatting constants
     ANNOTATIONS = "annotations"
     FIELDS_TO_KEEP = ["id", "name", "description", ANNOTATIONS]
@@ -202,6 +207,7 @@ class UniProtDATParser:
 
     This is spiking memory usage at the moment ...
     """
+
     FIELD_SEPARATOR = "\t"
     ID_SPLIT_CHARACTER = "-"
     EMPTY_FIELD = "-"
@@ -221,19 +227,28 @@ class UniProtDATParser:
 
     def get_line_values(self, line):
         """"""
-        uniprot_accession, database, database_id = [
-            x.strip() for x in line.split(self.FIELD_SEPARATOR)
-        ]
+        uniprot_accession = ""
+        database = ""
+        database_id = ""
+        if line:
+            uniprot_accession, database, database_id = [
+                x.strip() for x in line.split(self.FIELD_SEPARATOR)
+            ]
         uniprot_accession = uniprot_accession.split(self.ID_SPLIT_CHARACTER)[0]
         return (uniprot_accession, database, database_id)
 
     def add_to_record(self, uniprot_accession, database, database_id):
         """"""
-        record = self.records.get(uniprot_accession)
-        if record is None:
-            record = {}
-            self.records[uniprot_accession] = record
-        if database_id != self.EMPTY_FIELD:
+        if (
+            uniprot_accession
+            and database
+            and database_id
+            and database_id != self.EMPTY_FIELD
+        ):
+            record = self.records.get(uniprot_accession)
+            if record is None:
+                record = {}
+                self.records[uniprot_accession] = record
             database_values = record.get(database)
             if database_values is None:
                 record[database] = set()
