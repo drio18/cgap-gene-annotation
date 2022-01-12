@@ -1,4 +1,10 @@
-""""""
+"""Constants used across modules, primarily specifying terms used
+within schemas for creating/updating annotation files.
+
+NOTE: PARSERS_AVAILABLE must be updated with appropriate key, value
+pairs whenever parsers added to or removed from parsers module.
+"""
+
 from . import parsers
 
 PARSERS_AVAILABLE = {

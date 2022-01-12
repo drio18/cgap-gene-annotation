@@ -1,0 +1,405 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "id": "schemas/update.json",
+    "title": "Schema for Updating Existing Annotation",
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+        "add": {
+            "description": "New annotation sources to add",
+            "type": "array",
+            "items": {
+                "title": "Annotation Source",
+                "description": "Schema for Annotation Source",
+                "type": "object",
+                "required": [
+                    "files",
+                    "prefix",
+                    "parser"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                    "metadata": {
+                        "description": "Information about this annotation",
+                        "type": "object"
+                    },
+                    "files": {
+                        "description": "Source files for the annotation",
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "filter": {
+                        "description": "Fields to filter for inclusion in the final annotation",
+                        "type": "object",
+                        "additionalProperties": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "keep": {
+                        "description": "Fields to add from the annotation",
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "drop": {
+                        "description": "Fields to drop from the annotation",
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "source": {
+                        "description": "Whether annotations are the basis for subsequent annotations",
+                        "type": "boolean"
+                    },
+                    "merge": {
+                        "description": "Information on merging the annotation",
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                            "primary_fields",
+                            "type"
+                        ],
+                        "properties": {
+                            "primary_fields": {
+                                "description": "Identifiers for fields that must match to merge",
+                                "type": "array",
+                                "items": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "string"
+                                    },
+                                    "minItems": 2,
+                                    "maxItems": 2
+                                }
+                            },
+                            "secondary_fields": {
+                                "description": "Identifiers for fields to narrow multiple matches to unique set",
+                                "type": "array",
+                                "items": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "string"
+                                    },
+                                    "minItems": 2,
+                                    "maxItems": 2
+                                }
+                            },
+                            "type": {
+                                "description": "The type of merge to execute",
+                                "type": "array",
+                                "minItems": 2,
+                                "maxItems": 2,
+                                "items": {
+                                    "type": "string",
+                                    "enum": [
+                                        "one",
+                                        "many"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "parser": {
+                        "description": "Information on how to parse this annoation source",
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                            "type"
+                        ],
+                        "properties": {
+                            "parameters": {
+                                "description": "The kwargs to pass to the parser",
+                                "type": "object",
+                                "additionalProperties": false,
+                                "properties": {
+                                    "header": {
+                                        "description": "The header for the file, provided as a list of field names in appropriate order",
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "header_line": {
+                                        "description": "The line containing the header. Useful when the header starts with a comment character that indicates the line would otherwise be ignored.",
+                                        "type": "integer",
+                                        "minimum": 0
+                                    },
+                                    "comment_characters": {
+                                        "description": "Characters at the start of a line that signify the line is a comment",
+                                        "type": "string"
+                                    },
+                                    "empty_fields": {
+                                        "description": "Values that should be considered as an empty value for a field and thus not included in the record",
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "list_identifier": {
+                                        "description": "The character(s) that signify the given field value is a list, and upon which the value will be split into a list",
+                                        "type": "string"
+                                    },
+                                    "strip_characters": {
+                                        "description": "The characters to be removed from the beginning and end of all values from a line",
+                                        "type": "string"
+                                    },
+                                    "split_fields": {
+                                        "description": "Parameters for creating a new field out of an existing field in the record by splitting the existing field value's string",
+                                        "type": "array",
+                                        "items": {
+                                            "type": "object",
+                                            "additionalProperties": false,
+                                            "properties": {
+                                                "name": {
+                                                    "description": "The name for the new field",
+                                                    "type": "string"
+                                                },
+                                                "character": {
+                                                    "description": "The character on which to split the existing field value",
+                                                    "type": "string"
+                                                },
+                                                "index": {
+                                                    "description": "The index (zero-based) of the existing, split string to use for the new field",
+                                                    "type": "integer",
+                                                    "minimum": 0
+                                                },
+                                                "field": {
+                                                    "description": "The name of the existing field to split",
+                                                    "type": "string"
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            "type": {
+                                "description": "Description of parser to use",
+                                "type": "string",
+                                "enum": [
+                                    "TSV",
+                                    "CSV",
+                                    "GTF",
+                                    "GenBank",
+                                    "UniProtDAT"
+                                ]
+                            }
+                        }
+                    },
+                    "prefix": {
+                        "description": "The term used to prefix this annotation",
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "replace": {
+            "description": "Existing annotation sources to update",
+            "type": "array",
+            "items": {
+                "title": "Annotation Source",
+                "description": "Schema for Annotation Source",
+                "type": "object",
+                "required": [
+                    "files",
+                    "prefix",
+                    "parser"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                    "metadata": {
+                        "description": "Information about this annotation",
+                        "type": "object"
+                    },
+                    "files": {
+                        "description": "Source files for the annotation",
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "filter": {
+                        "description": "Fields to filter for inclusion in the final annotation",
+                        "type": "object",
+                        "additionalProperties": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "keep": {
+                        "description": "Fields to add from the annotation",
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "drop": {
+                        "description": "Fields to drop from the annotation",
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "source": {
+                        "description": "Whether annotations are the basis for subsequent annotations",
+                        "type": "boolean"
+                    },
+                    "merge": {
+                        "description": "Information on merging the annotation",
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                            "primary_fields",
+                            "type"
+                        ],
+                        "properties": {
+                            "primary_fields": {
+                                "description": "Identifiers for fields that must match to merge",
+                                "type": "array",
+                                "items": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "string"
+                                    },
+                                    "minItems": 2,
+                                    "maxItems": 2
+                                }
+                            },
+                            "secondary_fields": {
+                                "description": "Identifiers for fields to narrow multiple matches to unique set",
+                                "type": "array",
+                                "items": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "string"
+                                    },
+                                    "minItems": 2,
+                                    "maxItems": 2
+                                }
+                            },
+                            "type": {
+                                "description": "The type of merge to execute",
+                                "type": "array",
+                                "minItems": 2,
+                                "maxItems": 2,
+                                "items": {
+                                    "type": "string",
+                                    "enum": [
+                                        "one",
+                                        "many"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "parser": {
+                        "description": "Information on how to parse this annoation source",
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                            "type"
+                        ],
+                        "properties": {
+                            "parameters": {
+                                "description": "The kwargs to pass to the parser",
+                                "type": "object",
+                                "additionalProperties": false,
+                                "properties": {
+                                    "header": {
+                                        "description": "The header for the file, provided as a list of field names in appropriate order",
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "header_line": {
+                                        "description": "The line containing the header. Useful when the header starts with a comment character that indicates the line would otherwise be ignored.",
+                                        "type": "integer",
+                                        "minimum": 0
+                                    },
+                                    "comment_characters": {
+                                        "description": "Characters at the start of a line that signify the line is a comment",
+                                        "type": "string"
+                                    },
+                                    "empty_fields": {
+                                        "description": "Values that should be considered as an empty value for a field and thus not included in the record",
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "list_identifier": {
+                                        "description": "The character(s) that signify the given field value is a list, and upon which the value will be split into a list",
+                                        "type": "string"
+                                    },
+                                    "strip_characters": {
+                                        "description": "The characters to be removed from the beginning and end of all values from a line",
+                                        "type": "string"
+                                    },
+                                    "split_fields": {
+                                        "description": "Parameters for creating a new field out of an existing field in the record by splitting the existing field value's string",
+                                        "type": "array",
+                                        "items": {
+                                            "type": "object",
+                                            "additionalProperties": false,
+                                            "properties": {
+                                                "name": {
+                                                    "description": "The name for the new field",
+                                                    "type": "string"
+                                                },
+                                                "character": {
+                                                    "description": "The character on which to split the existing field value",
+                                                    "type": "string"
+                                                },
+                                                "index": {
+                                                    "description": "The index (zero-based) of the existing, split string to use for the new field",
+                                                    "type": "integer",
+                                                    "minimum": 0
+                                                },
+                                                "field": {
+                                                    "description": "The name of the existing field to split",
+                                                    "type": "string"
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            "type": {
+                                "description": "Description of parser to use",
+                                "type": "string",
+                                "enum": [
+                                    "TSV",
+                                    "CSV",
+                                    "GTF",
+                                    "GenBank",
+                                    "UniProtDAT"
+                                ]
+                            }
+                        }
+                    },
+                    "prefix": {
+                        "description": "The term used to prefix this annotation",
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "remove": {
+            "description": "Existing annotation prefix to remove",
+            "type": "array",
+            "items": {
+                "description": "The term used to prefix this annotation",
+                "type": "string"
+            }
+        }
+    }
+}

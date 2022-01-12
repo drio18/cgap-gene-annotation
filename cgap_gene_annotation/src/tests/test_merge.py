@@ -1,8 +1,9 @@
-import pytest
 from copy import deepcopy
 
+import pytest
+
 from .. import constants
-from ..merge import nested_getter, AnnotationMerge
+from ..merge import AnnotationMerge, nested_getter
 
 EXISTING_ANNOTATION = [
     {"foo": "bar"},
@@ -82,36 +83,48 @@ MERGED_PRIMARY_THEN_SECONDARY_FIELDS_ONE_TO_ONE = [
 
 @pytest.fixture
 def empty_merge():
+    """Empty class for tests."""
     return AnnotationMerge(None, None, None, {})
 
 
 def existing_annotation():
-    """"""
+    """The annotation to merge to.
+
+    Not a fixture to use in parametrize call, and deepcopied to ensure
+    identical every time called.
+    """
     return deepcopy(EXISTING_ANNOTATION)
 
 
 @pytest.fixture
 def new_annotation():
-    """"""
+    """The annotation to merge in.
+
+    Deepcopied to ensure identical every time called.
+    """
     return deepcopy(NEW_ANNOTATION)
 
 
 @pytest.fixture
 def merge_info():
-    """"""
+    """Simple merge parameters in expected format."""
     return {constants.MERGE_PRIMARY_FIELDS: [PRIMARY_MERGE_FIELDS]}
 
 
 @pytest.fixture
 def basic_merge(new_annotation, merge_info):
-    """"""
+    """Class with test loaded in."""
     return AnnotationMerge(
         existing_annotation(), new_annotation, NEW_PREFIX, merge_info
     )
 
 
 def existing_to_new_primary_edges(remove_fields=None):
-    """"""
+    """Expected mapping of existing to new annotations based upon test
+    constants EXISTING_ANNOTATION and NEW_ANNOTATION.
+
+    Not a fixture to allow customization and call within paramtrize.
+    """
     edges = {1: {1, 2}, 2: {2}, 3: {3}, 4: {3}, 5: {3, 4}, 6: {5}}
     if remove_fields:
         for field in remove_fields:
@@ -121,7 +134,11 @@ def existing_to_new_primary_edges(remove_fields=None):
 
 
 def new_to_existing_primary_edges(remove_fields=None):
-    """"""
+    """Expected mapping of new to existing annotations based upon test
+    constants EXISTING_ANNOTATION and NEW_ANNOTATION.
+
+    Not a fixture to allow customization and call within paramtrize.
+    """
     edges = {1: {1}, 2: {1, 2}, 3: {3, 4, 5}, 4: {5}, 5: {6}}
     if remove_fields:
         for field in remove_fields:
@@ -134,22 +151,22 @@ def new_to_existing_primary_edges(remove_fields=None):
 
 
 @pytest.mark.parametrize(
-    "dict_item,fields_to_get,expected",
+    "dict_item,field_to_get,expected",
     [
-        ({}, ["foo"], []),
-        ({}, ["foo", "bar"], []),
-        ({"foo": {"bar": "1"}}, ["foo"], {"bar": "1"}),
-        ({"foo": {"bar": "1"}}, ["foo", "bar"], ["1"]),
-        ({"foo": {"bar": ["1", "2"]}}, ["foo", "bar"], ["1", "2"]),
-        ({"foo": [{"bar": "1"}, {"bar": "2"}]}, ["foo", "bar"], ["1", "2"]),
-        ({"foo": {"bar": {"something"}}}, ["foo", "bar"], {"something"}),
-        ({"foo": {"bar": 1}}, ["foo", "bar"], 1),
-        ({"foo": {"foo": {"bar": "something"}}}, ["foo", "bar"], []),
+        ({}, "foo", []),
+        ({}, "foo.bar", []),
+        ({"foo": {"bar": "1"}}, "foo", {"bar": "1"}),
+        ({"foo": {"bar": "1"}}, "foo.bar", ["1"]),
+        ({"foo": {"bar": ["1", "2"]}}, "foo.bar", ["1", "2"]),
+        ({"foo": [{"bar": "1"}, {"bar": "2"}]}, "foo.bar", ["1", "2"]),
+        ({"foo": {"bar": {"something"}}}, "foo.bar", {"something"}),
+        ({"foo": {"bar": 1}}, "foo.bar", 1),
+        ({"foo": {"foo": {"bar": "something"}}}, "foo.bar", []),
     ],
 )
-def test_nested_getter(dict_item, fields_to_get, expected):
-    """"""
-    result = nested_getter(dict_item, fields_to_get)
+def test_nested_getter(dict_item, field_to_get, expected):
+    """Test nested fields retrieval from the given dictionary."""
+    result = nested_getter(dict_item, field_to_get)
     if result and isinstance(result, list):
         result = set(result)
         expected = set(expected)
@@ -221,7 +238,7 @@ class TestAnnotationMerge:
         ],
     )
     def test_parse_merge_info(self, merge_info, expected, empty_merge):
-        """"""
+        """Test parsing of given merge information."""
         assert empty_merge.parse_merge_info(merge_info) == expected
 
     @pytest.mark.parametrize(
@@ -237,7 +254,7 @@ class TestAnnotationMerge:
         ],
     )
     def test_convert_merge_type_to_bool(self, merge_type_tuple, expected, empty_merge):
-        """"""
+        """Test conversion of merge type constants to boolean values."""
         result = empty_merge.convert_merge_type_to_bool(merge_type_tuple)
         assert result == expected
 
@@ -296,7 +313,11 @@ class TestAnnotationMerge:
         expected_merged_annotations,
         basic_merge,
     ):
-        """"""
+        """Test overall merging of annotations given merge parameters.
+
+        As method has many helpers, should only fail when a test of one
+        of helper functions also fails.
+        """
         merge_info = {
             constants.MERGE_CHOICE: merge_type,
             constants.MERGE_PRIMARY_FIELDS: primary_merge_fields,
@@ -365,7 +386,9 @@ class TestAnnotationMerge:
         expected_new_to_existing_edges,
         basic_merge,
     ):
-        """"""
+        """Test creation of matched annotation mappings given the merge
+        parameters.
+        """
         if existing_to_new_edges:
             basic_merge.existing_to_new_edges = existing_to_new_edges
         if new_to_existing_edges:
@@ -377,61 +400,63 @@ class TestAnnotationMerge:
     @pytest.mark.parametrize(
         "merge_field_list,expected",
         [
-            ([("foo", "bar")], [["foo"], ["bar"]]),
-            ([("foo.bar", "bar.foo")], [["foo", "bar"], ["bar", "foo"]]),
-            ([("foo", "bar"), ("bar", "foo")], [["foo"], ["bar"]]),
+            ([("foo", "bar")], ["foo", "bar"]),
+            ([("foo.bar", "bar.foo")], ["foo.bar", "bar.foo"]),
+            ([("foo", "bar"), ("bar", "foo")], ["foo", "bar"]),
         ],
     )
     def test_get_merge_fields(self, merge_field_list, expected, empty_merge):
-        """"""
+        """Test retrieval of first set of merge fields from the given
+        list of merge fields.
+        """
         assert empty_merge.get_merge_fields(merge_field_list) == expected
 
     @pytest.mark.parametrize(
         "annotation,key,indices,expected",
         [
             ([], [], None, {}),
-            ([{"foo": "bar"}], [], None, {}),
-            ([{"foo": "bar"}], ["foo"], None, {"bar": {0}}),
-            ([{"foo": "bar"}], ["fu"], None, {}),
-            ([{"foo": "bar"}, {"fu": "bar"}], ["foo"], None, {"bar": {0}}),
-            ([{"foo": "bar"}, {"foo": "bur"}], ["foo"], None, {"bar": {0}, "bur": {1}}),
+            ([{"foo": "bar"}], "", None, {}),
+            ([{"foo": "bar"}], "foo", None, {"bar": {0}}),
+            ([{"foo": "bar"}], "fu", None, {}),
+            ([{"foo": "bar"}, {"fu": "bar"}], "foo", None, {"bar": {0}}),
+            ([{"foo": "bar"}, {"foo": "bur"}], "foo", None, {"bar": {0}, "bur": {1}}),
             (
                 [{"foo": "bar"}, {"foo": "bur"}, {"foo": "bar"}],
-                ["foo"],
+                "foo",
                 None,
                 {"bar": {0, 2}, "bur": {1}},
             ),
             (
                 [{"foo": "bar"}, {"foo": "bur"}, {"foo": "bar"}],
-                ["foo"],
+                "foo",
                 [0],
                 {"bar": {0}},
             ),
             (
                 [{"foo": "bar"}, {"foo": "bur"}, {"foo": "bar"}],
-                ["foo"],
+                "foo",
                 [0, 2],
                 {"bar": {0, 2}},
             ),
             (
                 [{"foo": "bar"}, {"foo": "bur"}, {"foo": "bar"}],
-                ["foo"],
+                "foo",
                 [0, 2],
                 {"bar": {0, 2}},
             ),
             (
                 [{"foo": "bar"}, {"foo": "bur"}, {"foo": "bar"}],
-                ["foo"],
+                "foo",
                 [1],
                 {"bur": {1}},
             ),
-            ([{"fu": "bar"}, {"foo": "bur"}, {"foo": "bar"}], ["foo"], [0], {}),
+            ([{"fu": "bar"}, {"foo": "bur"}, {"foo": "bar"}], "foo", [0], {}),
         ],
     )
     def test_match_value_to_annotation(
         self, annotation, key, indices, expected, empty_merge
     ):
-        """"""
+        """Test mapping of annotation field values to indices."""
         assert expected == empty_merge.match_value_to_annotation(
             annotation, key, indices=indices
         )
@@ -454,7 +479,9 @@ class TestAnnotationMerge:
         ],
     )
     def test_match_annotations(self, existing_table, new_table, expected, empty_merge):
-        """"""
+        """Test mapping of existing annotation's indices to new
+        annotation's indices given value mappings for each annotation.
+        """
         assert empty_merge.match_annotations(existing_table, new_table) == expected
 
     @pytest.mark.parametrize(
@@ -472,7 +499,7 @@ class TestAnnotationMerge:
     def test_add_values_to_sets(
         self, list_of_keys, values_to_add, dictionary, expected, empty_merge
     ):
-        """"""
+        """Test addition of new values as sets to keys in dictionary."""
         empty_merge.add_values_to_sets(list_of_keys, values_to_add, dictionary)
         assert dictionary == expected
 
@@ -491,7 +518,9 @@ class TestAnnotationMerge:
         ],
     )
     def test_intersect_edges(self, list_of_edges, expected, empty_merge):
-        """"""
+        """Test list of edges are condensed to singe list of edges such
+        that values in resulting list were present in all initial lists.
+        """
         empty_merge.intersect_edges(list_of_edges)
         assert list_of_edges == expected
 
@@ -527,7 +556,9 @@ class TestAnnotationMerge:
         expected_annotation,
         basic_merge,
     ):
-        """"""
+        """Test addition of matched annotations to existing annotation
+        given merge uniqueness parameters.
+        """
         basic_merge.existing_to_new_unique = existing_to_new_unique
         basic_merge.new_to_existing_unique = new_to_existing_unique
         basic_merge.existing_to_new_edges.append(existing_to_new_primary_edges())
@@ -568,7 +599,9 @@ class TestAnnotationMerge:
         expected,
         empty_merge,
     ):
-        """"""
+        """Test removal of matched edges based on merge uniqueness
+        parameters.
+        """
         existing_to_new = existing_to_new_primary_edges()
         new_to_existing = new_to_existing_primary_edges()
         empty_merge.existing_to_new_edges.append(existing_to_new)
@@ -591,6 +624,6 @@ class TestAnnotationMerge:
         ],
     )
     def test_prune_edges(self, all_edges, edges_to_prune, expected, empty_merge):
-        """"""
+        """Test removal of subset of edges from all edges."""
         empty_merge.prune_edges(all_edges, edges_to_prune)
         assert all_edges == expected

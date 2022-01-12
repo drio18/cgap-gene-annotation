@@ -3,17 +3,9 @@ import pytest
 
 from .. import schemas
 
-
 INVALID_SCHEMA = {
     "type": "object",
-    "properties": {
-        "foo": {
-            "type": "string"
-        },
-        "bar": {
-            "type": "invalid_type"
-        }
-    }
+    "properties": {"foo": {"type": "string"}, "bar": {"type": "invalid_type"}},
 }
 
 
@@ -24,7 +16,7 @@ INVALID_SCHEMA = {
         (schemas.UPDATE_SCHEMA, False),
         (schemas.CREATE_SCHEMA, False),
         (INVALID_SCHEMA, True),
-    ]
+    ],
 )
 def test_schemas_are_valid(schema, expect_error):
     """Test schemas used for validating JSON input are themselves
