@@ -20,6 +20,7 @@ Classes:
     - UniProtDATParser: Parser for UniProt DAT file.
 """
 
+import csv
 import re
 from xml.etree import ElementTree as ET
 
@@ -55,6 +56,20 @@ def get_lines(file_path):
     for handle in file_handle:
         for line in handle:
             yield line.strip()
+
+
+def read_lines(file_path, delimiter=","):
+    """Read lines with csv.reader and return as generator.
+
+    :param file_path: The path to the source file.
+    :type file_path: str
+    :returns: Lines from the file.
+    :rtype: collections.Iterable[list(str)]
+    """
+    file_handle = FileHandler(file_path).handle
+    for handle in file_handle:
+        for row in csv.reader(handle, delimiter=delimiter):
+            yield row
 
 
 def create_split_fields(record, split_fields):
@@ -115,7 +130,7 @@ class TSVParser:
 
     """
 
-    FIELD_SEPARATOR = "\t"
+    DELIMITER = "\t"
 
     def __init__(
         self,
@@ -125,7 +140,7 @@ class TSVParser:
         comment_characters="#",
         empty_fields=tuple([""]),
         list_identifier=None,
-        strip_characters=(" '" + '"'),
+        strip_characters=" '\"",
         split_fields=None,
         **kwargs,
     ):
@@ -169,11 +184,13 @@ class TSVParser:
             names from header and values.
         :rtype: collections.Iterable[dict]
         """
-        for idx, line in enumerate(get_lines(self.file_path)):
+        for idx, line in enumerate(
+            read_lines(self.file_path, delimiter=self.DELIMITER)
+        ):
             if self.header_line is not None and self.header is None:
                 if idx == self.header_line:
                     self.header = self.parse_header(line)
-            elif line.startswith(self.comment_characters):
+            elif "".join(line).startswith(self.comment_characters):
                 continue
             elif self.header is None:
                 self.header = self.parse_header(line)
@@ -186,35 +203,31 @@ class TSVParser:
                     yield record
 
     def parse_header(self, entry):
-        """Convert header line to field names.
+        """Convert header line fields to field names.
 
-        :param entry: The header line.
-        :type entry: str
-        :returns: The header field names.
+        :param entry: Header line fields.
+        :type entry: list(str)
+        :returns: Header field names.
         :rtype: list(str)
         """
-        entry = entry.strip(self.comment_characters)
         header = [
-            field.strip(self.strip_characters)
-            for field in entry.split(self.FIELD_SEPARATOR) if field
+            field.strip(self.comment_characters).strip(self.strip_characters)
+            for field in entry
         ]
         return header
 
     def parse_entry(self, entry):
         """Convert line to record.
 
-        :param entry: The line.
-        :type entry: str
-        :returns: The record, with header field names matched to values
+        :param entry: Line of interest.
+        :type entry: list(str)
+        :returns: Record, with header field names matched to values
             from the line.
         :rtype: dict
         """
         fields = {}
         if entry:
-            field_values = entry.split(self.FIELD_SEPARATOR)
-            field_values = [
-                value.strip(self.strip_characters) for value in field_values
-            ]
+            field_values = [value.strip(self.strip_characters) for value in entry]
             if self.list_identifier is not None:
                 for idx, value in enumerate(field_values):
                     if self.list_identifier in value:
@@ -246,7 +259,7 @@ class CSVParser(TSVParser):
     All args, kwargs, and methods as for TSVParser.
     """
 
-    FIELD_SEPARATOR = ","
+    DELIMITER = ","
 
 
 class GTFParser(TSVParser):
@@ -295,8 +308,8 @@ class GTFParser(TSVParser):
         """
         fields = {}
         if entry:
-            fields = dict(zip(self.header, entry.split(self.FIELD_SEPARATOR)))
-        attributes = fields.get(self.ATTRIBUTE, "")
+            fields = super().parse_entry(entry)
+        attributes = fields.get(self.ATTRIBUTE)
         if attributes:
             attributes = attributes.split(self.ATTRIBUTE_SEPARATOR)
             parsed_attributes = {}
@@ -472,7 +485,7 @@ class GenBankParser:
                 comment_without_summary = " ".join(words[:summary_index])
                 if comment_without_summary:
                     result[self.COMMENT_FIELD] = comment_without_summary
-                summary = " ".join(words[(summary_index + 1):])
+                summary = " ".join(words[(summary_index + 1) :])
                 if summary:
                     result[self.SUMMARY_FIELD] = summary
             except ValueError:  # Most, but not all, records have a summary
@@ -604,14 +617,22 @@ class UniProtDATParser:
 
 class XMLParser:
     """"""
+
     XML_START = "start"
     XML_END = "end"
 
     RECORD_PATH_SPLIT = "/"
     RECORD_PATH_ATTRIBUTE = re.compile(r"\[@[\w]*=[\w]*\]")
 
-    def __init__(self, file_path, record_path=None, empty_fields=tuple([""]),
-            list_identifier=None, split_fields=None, **kwargs):
+    def __init__(
+        self,
+        file_path,
+        record_path=None,
+        empty_fields=tuple([""]),
+        list_identifier=None,
+        split_fields=None,
+        **kwargs,
+    ):
         self.file_path = file_path
         self.record_path = self.parse_record_path(record_path)
         self.empty_fields = empty_fields
@@ -672,8 +693,9 @@ class XMLParser:
                         current_path[depth] = None
                     elif record_element:
                         if depth < child_depth:
-                            self.add_element_to_record(element, record,
-                                    children=children, depth=depth)
+                            self.add_element_to_record(
+                                element, record, children=children, depth=depth
+                            )
                             self.clear_children(children, depth)
                         else:
                             self.add_element_to_record(element, record)
@@ -707,7 +729,6 @@ class XMLParser:
                         result = False
                         break
         return result
-
 
     def add_element_to_record(self, element, record, children=None, depth=None):
         """"""
