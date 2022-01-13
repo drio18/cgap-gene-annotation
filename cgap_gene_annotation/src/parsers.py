@@ -232,7 +232,8 @@ class TSVParser:
                 for idx, value in enumerate(field_values):
                     if self.list_identifier in value:
                         new_value = [
-                            x for x in value.split(self.list_identifier) if x.strip()
+                            x.strip() for x in value.split(self.list_identifier)
+                            if x.strip()
                         ]
                         field_values[idx] = new_value
             fields = dict(zip(self.header, field_values))
