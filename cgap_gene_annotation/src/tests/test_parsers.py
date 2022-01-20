@@ -51,7 +51,7 @@ def test_get_lines(file_contents):
         assert isinstance(result, GeneratorType)
         result = list(result)
         assert result == file_contents.split("\n")[:-1]
-        mocked_file.assert_called_once_with(file_path, binary=False)
+        mocked_file.assert_called_once_with()
 
 
 @pytest.mark.parametrize(
@@ -77,7 +77,7 @@ def test_read_lines(file_contents, delimiter, expected):
         result = parsers.read_lines(file_path, delimiter=delimiter)
         assert isinstance(result, GeneratorType)
         result = list(result)
-        mocked_file.assert_called_once_with(file_path, binary=False)
+        mocked_file.assert_called_once_with()
         assert result == expected
 
 

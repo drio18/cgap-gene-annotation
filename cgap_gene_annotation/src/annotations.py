@@ -17,6 +17,7 @@ import logging
 import jsonschema
 
 from . import constants, schemas
+from .cytoband import add_cytoband_field, get_cytoband_locations
 from .merge import AnnotationMerge
 from .utils import FileHandler
 
@@ -358,6 +359,8 @@ class GeneAnnotation:
         for item in self.annotations:
             if item.get(identifier):
                 del item[identifier]
+            if item.get(constants.CYTOBAND, {}).get(identifier):
+                del item[constants.CYTOBAND][identifier]
         if identifier in self.metadata:
             del self.metadata[identifier]
 
@@ -366,27 +369,23 @@ class GeneAnnotation:
 
         Update self.metadata and self.annotations with loaded content.
 
-        NOTE: If file does not exist, utils.FileHandler returns an empty
-        generator, so no contents will be loaded.
+        NOTE: If file does not exist, FileHandler.get_handle() returns
+        an empty generator, so no contents will be loaded.
         """
         contents = {}
-        file_handle = FileHandler(self.file_path, binary=True).handle
+        file_handle = FileHandler(self.file_path, binary=True).get_handle()
         for handle in file_handle:
             #  Expecting only JSON for now
             contents = json.load(handle)
         metadata = contents.get(constants.METADATA)
         annotations = contents.get(constants.ANNOTATION)
         if not metadata:
-            logging.warning(
-                "No annotation metadata found in file: %s." % self.file_path
-            )
+            logging.warning("No annotation metadata found in file: %s", self.file_path)
         else:
             self.metadata = metadata
             logging.info("Existing annotations' metadata found.")
         if not annotations:
-            logging.warning(
-                "No annotations found in existing file: %s." % self.file_path
-            )
+            logging.warning("No annotations found in existing file: %s", self.file_path)
         else:
             self.annotations = annotations
             logging.info("Existing annotations found.")
@@ -411,6 +410,7 @@ class GeneAnnotation:
         fields_to_drop = annotation_metadata.get(constants.DROP_FIELDS)
         base_annotation = annotation_metadata.get(constants.SOURCE)
         metadata = annotation_metadata.get(constants.METADATA)
+        cytoband_metadata = annotation_metadata.get(constants.CYTOBAND)
         for file_path in files:
             parser = self.create_parser(file_path, parser_metadata)
             source_annotation = SourceAnnotation(
@@ -420,25 +420,52 @@ class GeneAnnotation:
                 fields_to_drop=fields_to_drop,
             ).make_annotation()
             if not source_annotation:
-                log.warning("No annotations created from source file: %s." % file_path)
+                log.warning("No annotations created from source file: %s", file_path)
             else:
                 if base_annotation:
                     log.info(
-                        "Adding initial annotations from source file: %s" % file_path
+                        "Adding initial annotations from source file: %s", file_path
                     )
                     self.annotations += [
                         {prefix: [entry]} for entry in source_annotation
                     ]
                 else:
                     log.info(
-                        "Attempting to merge annotations from source file: %s"
-                        % file_path
+                        "Attempting to merge annotations from source file: %s",
+                        file_path,
                     )
                     AnnotationMerge(
                         self.annotations, source_annotation, prefix, merge_info
                     ).merge_annotations()
         if prefix and metadata:
             self.metadata[prefix] = metadata
+        if cytoband_metadata:
+            self.add_cytoband_to_annotations(prefix, cytoband_metadata)
+
+    def add_cytoband_to_annotations(self, prefix, cytoband_metadata):
+        """Add calculated cytobands to all records for which
+        calculation is feasible.
+
+        :param prefix: Prefix used for annotation source for which
+            cytoband calculation is made.
+        :type prefix: str
+        :param cytoband_metadata: Metadata for calculating cytoband.
+        :type cytoband_metadata: dict
+        """
+        cytoband_reference_file = cytoband_metadata.get(constants.REFERENCE_FILE)
+        cytoband_locations = get_cytoband_locations(cytoband_reference_file)
+        if cytoband_locations:
+            for record in self.annotations:
+                if record.get(prefix):
+                    add_cytoband_field(
+                        record, prefix, cytoband_metadata, cytoband_locations
+                    )
+        else:
+            log.info(
+                "No attempt to calculate cytobands due to lack of information from"
+                " reference file for annotation with prefix: %s",
+                prefix,
+            )
 
     def create_parser(self, file_path, parser_metadata):
         """Create a parser class for a source file.

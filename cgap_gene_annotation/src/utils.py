@@ -1,5 +1,9 @@
 """Functions/classes shared across modules.
 
+Functions:
+    - nested_getter: Recursively retrieves nested fields from within
+        dicts.
+
 Classes:
     - FileHandler: Open a local or S3 file (gzipped or not), providing
         a handle within generator to be used.
@@ -19,6 +23,62 @@ log = logging.getLogger(__name__)
 
 S3_FILE_URI_SCHEME = "s3"
 S3_FILE_URL_HOST_NAME = "s3.amazonaws.com"
+FIELD_SEPARATOR = "."
+
+
+def nested_getter(item, field_to_get, string_return=False):
+    """Recursively retrieve fields from objects.
+
+    As input files are expected to be text files, fields are expected
+    to be either lists of strings or strings, with the item of interest
+    only a dictionary upon first call of the function. If assumption
+    fails to hold, update accordingly.
+
+    :param item: The object of interest.
+    :type item: dict or list or str
+    :param field_to_get: The field name to be retrieved from the
+        item.
+    :type field_to_get: str
+    :param string_return: Whether to try to return a string result or
+        a list (default is list).
+    :type: boolean
+    :returns: Retrieved fields from item.
+    :rtype: list(str)
+    """
+    result = []
+    if item and isinstance(item, list):
+        for sub_item in item:
+            sub_result = nested_getter(sub_item, field_to_get)
+            result += sub_result
+        result = list(set(result))
+    elif isinstance(item, dict):
+        # Allow field names to contain FIELD_SEPARATOR in terminal
+        # field but not higher-level field, e.g. can have an item with
+        # {"foo.bar": "something"} and field_to_get "foo.bar", but not
+        # item of {"foo.bar": {"fu": "bur"}} and field_to_get
+        # "foo.bar.fu". Alternative to get around this would be to
+        # set FIELD_SEPARATOR to something less likely to be in field
+        # names or to have parsers not allow/change field names if they
+        # contain FIELD_SEPARATOR.
+        result = item.get(field_to_get)
+        if result:
+            field_to_get = ""
+        if result is None and FIELD_SEPARATOR in field_to_get:
+            field_terms = field_to_get.split(FIELD_SEPARATOR)
+            first_term = field_terms.pop(0)
+            result = item.get(first_term)
+            if result:
+                field_to_get = FIELD_SEPARATOR.join(field_terms)
+        if result and field_to_get:
+            result = nested_getter(result, field_to_get, string_return=string_return)
+        elif result is None:
+            if not string_return:
+                result = []
+    if isinstance(result, str) and not string_return:
+        result = [result]
+    elif isinstance(result, list) and len(result) == 1 and string_return:
+        result = result[0]
+    return result
 
 
 class FileHandler:
@@ -31,8 +91,11 @@ class FileHandler:
     If unable to properly open file, catch the exception, log it, and
     return an empty generator, so downstream code continues to run.
 
-    :var handle: File handle within generator.
-    :vartype handle: collections.Iterable(object)
+    :var file_path: The path to the file to open.
+    :vartype file_path: str
+    :var binary: Whether to open the file in text or binary mode.
+        Default is text mode. Only applies to local files.
+    :vartype binary: bool
     """
 
     GZIP_EXTENSION = ".gz"
@@ -46,9 +109,10 @@ class FileHandler:
             Default is text mode. Only applies to local files.
         :type binary: bool
         """
-        self.handle = self.get_handle(file_path, binary=binary)
+        self.file_path = file_path
+        self.binary = binary
 
-    def get_handle(self, file_path, binary=False):
+    def get_handle(self):
         """Determine if file is on S3 or local and route accordingly.
 
         :param file_path: The path to the file to open.
@@ -59,55 +123,52 @@ class FileHandler:
         :returns: File handle generator (empty if file not opened).
         :rtype: collections.Iterable[object]
         """
-        s3_bucket, s3_key = self.get_s3_parameters(file_path)
+        s3_bucket, s3_key = self.get_s3_parameters()
         if s3_bucket and s3_key:
             return self.stream_s3_file(s3_bucket, s3_key)
         else:
-            return self.open_local_file(file_path, binary=binary)
+            return self.open_local_file()
 
-    def open_local_file(self, file_path, binary=False):
+    def open_local_file(self):
         """Open local file and return handle within generator.
 
-        :param file_path: The path to the file to open.
-        :type file_path: str
-        :param binary: Whether to open the file in text or binary mode.
-            Default is text mode.
-        :type binary: bool
         :returns: File handle generator (empty if file not opened).
         :rtype: collections.Iterable[object]
         """
-        if file_path.endswith(self.GZIP_EXTENSION):
+        if self.file_path.endswith(self.GZIP_EXTENSION):
             open_function = gzip.open
         else:
             open_function = open
         try:
-            if binary:
-                with open_function(file_path, mode="rb") as file_handle:
+            if self.binary:
+                with open_function(
+                    self.file_path, mode="rb", encoding="utf-8"
+                ) as file_handle:
                     yield file_handle
             else:
-                with open_function(file_path, mode="rt", encoding="utf-8-sig") as file_handle:
+                with open_function(
+                    self.file_path, mode="rt", encoding="utf-8-sig"
+                ) as file_handle:
                     yield file_handle
         except (FileNotFoundError, OSError):
-            log.exception("Could not open file: %s" % file_path)
+            log.exception("Could not open file: %s" % self.file_path)
 
-    def get_s3_parameters(self, file_path):
+    def get_s3_parameters(self):
         """Check if file is on AWS S3.
 
         Looking for either S3 URI or object URL.
 
-        :param file_path: The path to the file to open.
-        :type file_path: str
         :returns: Names of bucket and key, if found.
         :rtype: (str or None, str or None)
         """
         bucket = None
         key = None
         if (
-            file_path.startswith(S3_FILE_URI_SCHEME)
-            or S3_FILE_URL_HOST_NAME in file_path
+            self.file_path.startswith(S3_FILE_URI_SCHEME)
+            or S3_FILE_URL_HOST_NAME in self.file_path
         ):
             try:
-                parsed_file_path = urlparse(file_path)
+                parsed_file_path = urlparse(self.file_path)
                 if parsed_file_path.scheme == S3_FILE_URI_SCHEME:
                     bucket = parsed_file_path.hostname
                     key = parsed_file_path.path

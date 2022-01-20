@@ -3,7 +3,7 @@ from copy import deepcopy
 import pytest
 
 from .. import constants
-from ..merge import AnnotationMerge, nested_getter
+from ..merge import AnnotationMerge
 
 EXISTING_ANNOTATION = [
     {"foo": "bar"},
@@ -148,29 +148,6 @@ def new_to_existing_primary_edges(remove_fields=None):
                 if field in value:
                     value.remove(field)
     return edges
-
-
-@pytest.mark.parametrize(
-    "dict_item,field_to_get,expected",
-    [
-        ({}, "foo", []),
-        ({}, "foo.bar", []),
-        ({"foo": {"bar": "1"}}, "foo", {"bar": "1"}),
-        ({"foo": {"bar": "1"}}, "foo.bar", ["1"]),
-        ({"foo": {"bar": ["1", "2"]}}, "foo.bar", ["1", "2"]),
-        ({"foo": [{"bar": "1"}, {"bar": "2"}]}, "foo.bar", ["1", "2"]),
-        ({"foo": {"bar": {"something"}}}, "foo.bar", {"something"}),
-        ({"foo": {"bar": 1}}, "foo.bar", 1),
-        ({"foo": {"foo": {"bar": "something"}}}, "foo.bar", []),
-    ],
-)
-def test_nested_getter(dict_item, field_to_get, expected):
-    """Test nested fields retrieval from the given dictionary."""
-    result = nested_getter(dict_item, field_to_get)
-    if result and isinstance(result, list):
-        result = set(result)
-        expected = set(expected)
-    assert result == expected
 
 
 class TestAnnotationMerge:

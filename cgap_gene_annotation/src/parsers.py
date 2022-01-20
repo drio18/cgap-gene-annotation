@@ -44,15 +44,15 @@ SPLIT_FIELDS_FIELD = "field"
 def get_lines(file_path):
     """Get lines from a file and return as generator.
 
-    If FileHandler.handle result is empty (file couldn't be opened),
-    result here will be an empty generator as well.
+    If FileHandler.get_handle() result is empty (file couldn't be
+    opened), result here will be an empty generator as well.
 
     :param file_path: The path to the source file.
     :type file_path: str
     :returns: Lines from the file.
     :rtype: collections.Iterable[str]
     """
-    file_handle = FileHandler(file_path).handle
+    file_handle = FileHandler(file_path).get_handle()
     for handle in file_handle:
         for line in handle:
             yield line.strip()
@@ -66,7 +66,7 @@ def read_lines(file_path, delimiter=","):
     :returns: Lines from the file.
     :rtype: collections.Iterable[list(str)]
     """
-    file_handle = FileHandler(file_path).handle
+    file_handle = FileHandler(file_path).get_handle()
     for handle in file_handle:
         for row in csv.reader(handle, delimiter=delimiter):
             yield row
@@ -232,7 +232,8 @@ class TSVParser:
                 for idx, value in enumerate(field_values):
                     if self.list_identifier in value:
                         new_value = [
-                            x.strip() for x in value.split(self.list_identifier)
+                            x.strip()
+                            for x in value.split(self.list_identifier)
                             if x.strip()
                         ]
                         field_values[idx] = new_value
@@ -669,7 +670,7 @@ class XMLParser:
         record_element = False
         current_path = [None for path_tuple in self.record_path]
         record_path_length = len(self.record_path)
-        file_handle = FileHandler(self.file_path).handle
+        file_handle = FileHandler(self.file_path).get_handle()
         for handle in file_handle:
             tree = ET.iterparse(handle, events=(self.XML_START, self.XML_END))
             _, root = next(tree)

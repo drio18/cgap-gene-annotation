@@ -300,7 +300,7 @@ class TestGeneAnnotation:
                 return_value=file_contents,
             ) as mock_json_load:
                 empty_gene_annotation.parse_file()
-                mock_open_file.assert_called_once_with(None, binary=True)
+                mock_open_file.assert_called_once_with()
                 mock_json_load.assert_called_once_with(file_handle)
                 assert empty_gene_annotation.metadata == expected_metadata
                 assert empty_gene_annotation.annotations == expected_annotations
@@ -413,6 +413,38 @@ class TestGeneAnnotation:
                     mock_merge().merge_annotations.assert_called_once_with()
                 else:
                     mock_merge.assert_not_called()
+
+    @pytest.mark.parametrize(
+        "cytoband_metadata,cytoband_locations",
+        [
+            ({}, []),
+            ({constants.REFERENCE_FILE: "foo"}, []),
+            ({constants.REFERENCE_FILE: "foo"}, [{}]),
+        ],
+    )
+    def test_add_cytoband_to_annotations(
+        self, cytoband_metadata, cytoband_locations, basic_gene_annotation
+    ):
+        """Test call to add cytobands to annotation records."""
+        with mock.patch(
+            "cgap_gene_annotation.src.annotations.get_cytoband_locations",
+            return_value=cytoband_locations,
+        ) as mock_get_cytoband_locations:
+            with mock.patch(
+                "cgap_gene_annotation.src.annotations.add_cytoband_field",
+            ) as mock_add_cytoband_field:
+                basic_gene_annotation.add_cytoband_to_annotations(
+                    PREFIX_1, cytoband_metadata
+                )
+                mock_get_cytoband_locations.assert_called_once()
+                if cytoband_locations:
+                    annotations = basic_gene_annotation.annotations
+                    assert len(annotations) == len(
+                        mock_add_cytoband_field.call_args_list
+                    )
+                    mock_add_cytoband_field.assert_called_with(
+                        annotations[-1], PREFIX_1, cytoband_metadata, cytoband_locations
+                    )
 
     @mock.patch("cgap_gene_annotation.src.annotations.GeneAnnotation.add_source")
     @mock.patch("cgap_gene_annotation.src.annotations.GeneAnnotation.remove_identifier")

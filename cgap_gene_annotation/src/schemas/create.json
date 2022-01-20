@@ -53,6 +53,44 @@
                 "description": "Whether annotations are the basis for subsequent annotations",
                 "type": "boolean"
             },
+            "cytoband": {
+                "description": "Fields for calculating cytoband locations of annotations",
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                    "chromosome",
+                    "start",
+                    "end",
+                    "reference_file",
+                    "position_index"
+                ],
+                "properties": {
+                    "chromosome": {
+                        "description": "The chromosome annotation field",
+                        "type": "string"
+                    },
+                    "start": {
+                        "description": "The start position annotation field",
+                        "type": "string"
+                    },
+                    "end": {
+                        "description": "The end position annotation field",
+                        "type": "string"
+                    },
+                    "reference_file": {
+                        "description": "Path to the UCSC cytoband reference file",
+                        "type": "string"
+                    },
+                    "position_index": {
+                        "description": "The index of the first position (i.e. 0-based or 1-based)",
+                        "type": "integer",
+                        "enum": [
+                            0,
+                            1
+                        ]
+                    }
+                }
+            },
             "merge": {
                 "description": "Information on merging the annotation",
                 "type": "object",
@@ -189,7 +227,12 @@
             },
             "prefix": {
                 "description": "The term used to prefix this annotation",
-                "type": "string"
+                "type": "string",
+                "not": {
+                    "enum": [
+                        "cytoband"
+                    ]
+                }
             }
         }
     }

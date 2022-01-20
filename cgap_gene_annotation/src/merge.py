@@ -1,10 +1,6 @@
 """Functions/classes required to merge new annotations to an existing
 one.
 
-Functions:
-    - nested_getter: Recursively retrieves nested fields from within
-        dicts.
-
 Classes:
     - AnnotationMerge: Primary object called elsewhere in package when
         merging a new annotation.
@@ -13,58 +9,7 @@ Classes:
 import logging
 
 from . import constants
-
-
-FIELD_SEPARATOR = "."  # Expected punctuation between nested fields
-
-
-def nested_getter(item, field_to_get):
-    """Recursively retrieve fields from objects.
-
-    As input files are expected to be text files, fields are expected
-    to be either lists of strings or strings, with the item of interest
-    only a dictionary upon first call of the function. If assumption
-    fails to hold, update accordingly.
-
-    :param item: The object of interest.
-    :type item: dict or list or str
-    :param field_to_get: The field name to be retrieved from the
-        item.
-    :type field_to_get: str
-    :returns: Retrieved fields from item.
-    :rtype: list(str)
-    """
-    result = []
-    if item and isinstance(item, list):
-        for sub_item in item:
-            sub_result = nested_getter(sub_item, field_to_get)
-            result += sub_result
-        result = list(set(result))
-    elif isinstance(item, dict):
-        # Allow field names to contain FIELD_SEPARATOR in terminal
-        # field but not higher-level field, e.g. can have an item with
-        # {"foo.bar": "something"} and field_to_get "foo.bar", but not
-        # item of {"foo.bar": {"fu": "bur"}} and field_to_get
-        # "foo.bar.fu". Alternative to get around this would be to
-        # set FIELD_SEPARATOR to something less likely to be in field
-        # names or to have parsers not allow/change field names if they
-        # contain FIELD_SEPARATOR.
-        result = item.get(field_to_get)
-        if result:
-            field_to_get = ""
-        if result is None and FIELD_SEPARATOR in field_to_get:
-            field_terms = field_to_get.split(FIELD_SEPARATOR)
-            first_term = field_terms.pop(0)
-            result = item.get(first_term)
-            if result:
-                field_to_get = FIELD_SEPARATOR.join(field_terms)
-        if result and field_to_get:
-            result = nested_getter(result, field_to_get)
-        elif result is None:
-            result = []
-    if isinstance(result, str):
-        result = [result]
-    return result
+from .utils import nested_getter
 
 
 class AnnotationMerge:
@@ -125,8 +70,6 @@ class AnnotationMerge:
         indices.
     :vartype new_to_existing_edges: list
     """
-
-    FIELD_SEPARATOR = "."  # Expected punctuation between nested fields
 
     def __init__(
         self, existing_annotation, new_annotation, prefix, merge_info, debug=False
@@ -217,8 +160,8 @@ class AnnotationMerge:
         annotations are eventually deleted to remove from memory.
         """
         logging.info(
-            "Merging fields to existing annotation under following prefix: %s"
-            % self.prefix
+            "Merging fields to existing annotation under following prefix: %s",
+            self.prefix,
         )
         while self.primary_merge_fields:
             self.join_annotations(self.primary_merge_fields)

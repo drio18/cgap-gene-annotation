@@ -18,6 +18,42 @@ S3_KEY = "test_file.txt"
 S3_KEY_GZ = "test_file.gz"
 
 
+@pytest.mark.parametrize(
+    "dict_item,field_to_get,string_return,expected",
+    [
+        ({}, "foo", False, []),
+        ({}, "foo", True, None),
+        ({}, "foo.bar", False, []),
+        ({"foo": {"bar": "1"}}, "foo", False, {"bar": "1"}),
+        ({"foo": {"bar": "1"}}, "foo", True, {"bar": "1"}),
+        ({"foo": {"bar": "1"}}, "foo.bar", False, ["1"]),
+        ({"foo": {"bar": "1"}}, "foo.bar", True, "1"),
+        ({"foo": {"bar": ["1"]}}, "foo.bar", False, ["1"]),
+        ({"foo": {"bar": ["1"]}}, "foo.bar", True, "1"),
+        ({"foo": {"bar": ["1", "1"]}}, "foo.bar", False, ["1", "1"]),
+        ({"foo": {"bar": ["1", "1"]}}, "foo.bar", True, ["1", "1"]),
+        ({"foo": {"bar": ["1", "2"]}}, "foo.bar", False, ["1", "2"]),
+        ({"foo": {"bar": ["1", "2"]}}, "foo.bar", True, ["1", "2"]),
+        ({"foo": [{"bar": "1"}, {"bar": "2"}]}, "foo.bar", False, ["1", "2"]),
+        ({"foo": [{"bar": "1"}, {"bar": "2"}]}, "foo.bar", True, ["1", "2"]),
+        ({"foo": [{"bar": "1"}, {"bar": "1"}]}, "foo.bar", False, ["1"]),
+        ({"foo": [{"bar": "1"}, {"bar": "1"}]}, "foo.bar", True, "1"),
+        ({"foo": {"bar": {"something"}}}, "foo.bar", False, {"something"}),
+        ({"foo": {"bar": 1}}, "foo.bar", False, 1),
+        ({"foo": {"foo": {"bar": "something"}}}, "foo.bar", False, []),
+    ],
+)
+def test_nested_getter(dict_item, field_to_get, string_return, expected):
+    """Test nested fields retrieval from the given dictionary."""
+    result = utils.nested_getter(dict_item, field_to_get, string_return=string_return)
+    if isinstance(expected, list):
+        assert isinstance(result, list)
+        assert len(expected) == len(result)
+        result = set(result)
+        expected = set(expected)
+    assert result == expected
+
+
 @pytest.fixture
 def file_content():
     """File-like object for mocked files."""
@@ -69,22 +105,24 @@ class TestFileHandler:
         Mocked file contents fixed.
         """
         mode = "rt"
+        encoding = "utf-8-sig"
         if binary:
             mode = "rb"
+            encoding = "utf-8"
         with mock.patch(
             "cgap_gene_annotation.src.utils.open",
             return_value=file_content,
             create=True,
             side_effect=side_effect,
         ) as mocked_file:
-            result = utils.FileHandler("").open_local_file(file_path, binary=binary)
+            result = utils.FileHandler(file_path, binary=binary).open_local_file()
             assert isinstance(result, GeneratorType)
             result = list(result)
             if side_effect:
                 assert result == []
             else:
                 assert result == [file_content]
-            mocked_file.assert_called_once_with(file_path, mode=mode)
+            mocked_file.assert_called_once_with(file_path, mode=mode, encoding=encoding)
 
     @pytest.mark.parametrize(
         "file_path,binary,side_effect",
@@ -103,22 +141,24 @@ class TestFileHandler:
         Mocked file contents fixed.
         """
         mode = "rt"
+        encoding = "utf-8-sig"
         if binary:
             mode = "rb"
+            encoding = "utf-8"
         with mock.patch(
             "cgap_gene_annotation.src.utils.gzip.open",
             return_value=file_content,
             create=True,
             side_effect=side_effect,
         ) as mocked_file:
-            result = utils.FileHandler("").open_local_file(file_path, binary=binary)
+            result = utils.FileHandler(file_path, binary=binary).open_local_file()
             assert isinstance(result, GeneratorType)
             result = list(result)
             if side_effect:
                 assert result == []
             else:
                 assert result == [file_content]
-            mocked_file.assert_called_once_with(file_path, mode=mode)
+            mocked_file.assert_called_once_with(file_path, mode=mode, encoding=encoding)
 
     @pytest.mark.parametrize(
         "file_path,expected",
@@ -137,7 +177,7 @@ class TestFileHandler:
     )
     def test_get_s3_parameters(self, file_path, expected):
         """Test retrieval of bucket and key from S3 file string."""
-        assert utils.FileHandler.get_s3_parameters(None, file_path) == expected
+        assert utils.FileHandler(file_path).get_s3_parameters() == expected
 
     @pytest.mark.parametrize(
         "bucket,key,expected_lines",
