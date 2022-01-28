@@ -8,14 +8,6 @@ import pytest
 from .. import parsers
 
 
-SPLIT_FIELDS = [
-    {
-        parsers.SPLIT_FIELDS_NAME: "fu",
-        parsers.SPLIT_FIELDS_CHARACTER: ".",
-        parsers.SPLIT_FIELDS_INDEX: 0,
-        parsers.SPLIT_FIELDS_FIELD: "foo",
-    }
-]
 GENBANK_COMMENT_LINE = "This gene has been reviewed by RefSeq"
 GENBANK_COMMENT_WORDS = GENBANK_COMMENT_LINE.split()
 GENBANK_SUMMARY_CONTENTS = "The gene does something"
@@ -79,26 +71,6 @@ def test_read_lines(file_contents, delimiter, expected):
         result = list(result)
         mocked_file.assert_called_once_with()
         assert result == expected
-
-
-@pytest.mark.parametrize(
-    "record,split_fields,expected",
-    [
-        ({}, [], {}),
-        ({"foo": "bar"}, [], {"foo": "bar"}),
-        ({}, [{}], {}),
-        ({"foo": "bar"}, [{}], {"foo": "bar"}),
-        ({}, SPLIT_FIELDS, {}),
-        ({"foo": "bar"}, SPLIT_FIELDS, {"foo": "bar", "fu": "bar"}),
-        ({"foo": "bar.1"}, SPLIT_FIELDS, {"foo": "bar.1", "fu": "bar"}),
-    ],
-)
-def test_create_split_fields(record, split_fields, expected):
-    """Test creation of new field in record from existing field using
-    given parameters.
-    """
-    parsers.create_split_fields(record, split_fields)
-    assert record == expected
 
 
 class TestTSVParser:

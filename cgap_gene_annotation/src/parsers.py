@@ -34,11 +34,6 @@ COMMENT_CHARACTERS = "comment_characters"
 EMPTY_FIELDS = "empty_fields"
 LIST_IDENTIFIER = "list_identifier"
 STRIP_CHARACTERS = "strip_characters"
-SPLIT_FIELDS = "split_fields"
-SPLIT_FIELDS_NAME = "name"
-SPLIT_FIELDS_CHARACTER = "character"
-SPLIT_FIELDS_INDEX = "index"
-SPLIT_FIELDS_FIELD = "field"
 
 
 def get_lines(file_path):
@@ -72,32 +67,6 @@ def read_lines(file_path, delimiter=","):
             yield row
 
 
-def create_split_fields(record, split_fields):
-    """Split field in record according to parameters, and update
-    the record with the new field.
-
-    Useful for when source file provides Ensembl ID as ID.version
-    and only ID can be matched.
-
-    :param record: The record to update.
-    :type record: dict
-    :param split_fields: Parameters for creating new field by
-        splitting existing field in record.
-    :type split_fields: dict
-    """
-    for split_field in split_fields:
-        field_to_split = split_field.get(SPLIT_FIELDS_FIELD)
-        split_character = split_field.get(SPLIT_FIELDS_CHARACTER)
-        split_index = split_field.get(SPLIT_FIELDS_INDEX)
-        field_name = split_field.get(SPLIT_FIELDS_NAME)
-        field_value = record.get(field_to_split)
-        if isinstance(field_value, str):
-            split_value = field_value.split(split_character)
-            if split_index < len(split_value):
-                new_value = split_value[split_index]
-                record[field_name] = new_value
-
-
 class TSVParser:
     """Parser for general, flat TSV files.
 
@@ -123,11 +92,6 @@ class TSVParser:
     :vartype list_identifier: str
     :var strip_characters: Characters to remove from lines if present.
     :vartype strip_characters: str
-    :var split_fields: Parameters for creating new fields in a
-        record from existing fields by splitting the string in the
-        existing field.
-    :vartype split_fields: list(dict)
-
     """
 
     DELIMITER = "\t"
@@ -141,7 +105,6 @@ class TSVParser:
         empty_fields=tuple([""]),
         list_identifier=None,
         strip_characters=" '\"",
-        split_fields=None,
         **kwargs,
     ):
         """Create the class and set attributes.
@@ -163,10 +126,6 @@ class TSVParser:
         :type list_identifier: str
         :param strip_characters: Characters to remove from lines if present.
         :type strip_characters: str
-        :param split_fields: Parameters for creating new fields in a
-            record from existing fields by splitting the string in the
-            existing field.
-        :type split_fields: list(dict)
         """
         self.file_path = file_path
         self.header = header
@@ -175,7 +134,6 @@ class TSVParser:
         self.empty_fields = empty_fields
         self.list_identifier = list_identifier
         self.strip_characters = strip_characters
-        self.split_fields = split_fields
 
     def get_records(self):
         """Identify header and create records from source file.
@@ -197,8 +155,6 @@ class TSVParser:
             else:
                 record = self.parse_entry(line)
                 self.remove_empty_fields(record)
-                if self.split_fields:
-                    create_split_fields(record, self.split_fields)
                 if record:
                     yield record
 
@@ -632,14 +588,12 @@ class XMLParser:
         record_path=None,
         empty_fields=tuple([""]),
         list_identifier=None,
-        split_fields=None,
         **kwargs,
     ):
         self.file_path = file_path
         self.record_path = self.parse_record_path(record_path)
         self.empty_fields = empty_fields
         self.list_identifier = list_identifier
-        self.split_fields = split_fields
 
     def parse_record_path(self, record_path):
         """"""
@@ -687,8 +641,6 @@ class XMLParser:
                         if self.is_path_to_record(current_path):
                             record_element = False
                             self.add_element_to_record(element, record)
-                            if self.split_fields:
-                                create_split_fields(record, self.split_fields)
                             yield record
                             record = {}
                             child_depth = -1

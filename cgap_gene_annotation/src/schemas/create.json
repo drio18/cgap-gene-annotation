@@ -49,6 +49,45 @@
                     "type": "string"
                 }
             },
+            "replacement_fields": {
+                "description": "Fields with values to rename",
+                "type": "object",
+                "additionalProperties": {
+                    "description": "Mapping of existing field values to replacement value",
+                    "type": "object",
+                    "additionalProperties": {
+                        "description": "Replacement value",
+                        "type": "string"
+                    }
+                }
+            },
+            "split_fields": {
+                "description": "Parameters for creating a new field out of an existing field in the record by splitting the existing field value's string",
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                        "name": {
+                            "description": "The name for the new field",
+                            "type": "string"
+                        },
+                        "character": {
+                            "description": "The character on which to split the existing field value",
+                            "type": "string"
+                        },
+                        "index": {
+                            "description": "The index (zero-based) of the existing, split string to use for the new field",
+                            "type": "integer",
+                            "minimum": 0
+                        },
+                        "field": {
+                            "description": "The name of the existing field to split",
+                            "type": "string"
+                        }
+                    }
+                }
+            },
             "source": {
                 "description": "Whether annotations are the basis for subsequent annotations",
                 "type": "boolean"
@@ -182,33 +221,6 @@
                             "strip_characters": {
                                 "description": "The characters to be removed from the beginning and end of all values from a line",
                                 "type": "string"
-                            },
-                            "split_fields": {
-                                "description": "Parameters for creating a new field out of an existing field in the record by splitting the existing field value's string",
-                                "type": "array",
-                                "items": {
-                                    "type": "object",
-                                    "additionalProperties": false,
-                                    "properties": {
-                                        "name": {
-                                            "description": "The name for the new field",
-                                            "type": "string"
-                                        },
-                                        "character": {
-                                            "description": "The character on which to split the existing field value",
-                                            "type": "string"
-                                        },
-                                        "index": {
-                                            "description": "The index (zero-based) of the existing, split string to use for the new field",
-                                            "type": "integer",
-                                            "minimum": 0
-                                        },
-                                        "field": {
-                                            "description": "The name of the existing field to split",
-                                            "type": "string"
-                                        }
-                                    }
-                                }
                             }
                         }
                     },

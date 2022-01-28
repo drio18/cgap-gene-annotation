@@ -26,6 +26,54 @@ S3_FILE_URL_HOST_NAME = "s3.amazonaws.com"
 FIELD_SEPARATOR = "."
 
 
+def nested_setter(item, field_to_set, value=None, delete_field=False):
+    """Recursively set fields in dictionaries.
+
+    Note: Not intended to loop through lists of dicts as nested_getter
+    does.
+
+    :param item: The dictionary of interest,
+    :type item: dict
+    :param field_to_set: The field(s) in the dictionary to set/delete.
+    :type field_to_set: str
+    :param value: The value to set for the field.
+    :type value: str or None
+    :param delete_field: Whether to delete the given field from the
+        item (if present).
+    :type delete_field: bool
+    """
+    fields = field_to_set.split(FIELD_SEPARATOR)
+    if fields:
+        # Field name may have FIELD_SEPARATOR within it, so check that first before
+        # assuming nested field.
+        high_level_item_value = item.get(field_to_set)
+        if high_level_item_value is not None:
+            if delete_field:
+                item_value = item.get(field_to_set)
+                if item_value is not None:
+                    del item[field_to_set]
+            elif value is not None:
+                item[field_to_set] = value
+        else:
+            current_field = fields.pop(0)
+            field_to_set = FIELD_SEPARATOR.join(fields)
+            nested_item_value = item.get(current_field)
+            if isinstance(nested_item_value, dict):
+                nested_setter(
+                    nested_item_value, field_to_set, value=value, delete_field=delete_field
+                )
+            elif nested_item_value is None and value is not None:
+                if fields:
+                    current_field_value = {}
+                    item[current_field] = current_field_value
+                    nested_setter(
+                        current_field_value, field_to_set, value=value,
+                        delete_field=delete_field
+                    )
+                else:
+                    item[current_field] = value
+
+
 def nested_getter(item, field_to_get, string_return=False):
     """Recursively retrieve fields from objects.
 
@@ -43,7 +91,7 @@ def nested_getter(item, field_to_get, string_return=False):
         a list (default is list).
     :type: boolean
     :returns: Retrieved fields from item.
-    :rtype: list(str)
+    :rtype: list(str) or str
     """
     result = []
     if item and isinstance(item, list):

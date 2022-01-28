@@ -32,6 +32,14 @@ DROP_FIELDS = "drop"
 
 SOURCE = "source"
 
+SPLIT_FIELDS = "split_fields"
+SPLIT_FIELDS_NAME = "name"
+SPLIT_FIELDS_CHARACTER = "character"
+SPLIT_FIELDS_INDEX = "index"
+SPLIT_FIELDS_FIELD = "field"
+
+REPLACEMENT_FIELDS = "replacement_fields"
+
 MERGE = "merge"
 MERGE_PRIMARY_FIELDS = "primary_fields"
 MERGE_SECONDARY_FIELDS = "secondary_fields"

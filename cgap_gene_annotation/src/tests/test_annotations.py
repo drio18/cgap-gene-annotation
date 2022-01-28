@@ -9,7 +9,12 @@ import pytest
 from .. import constants
 from ..annotations import GeneAnnotation, JSONInputError, SourceAnnotation
 
-ANNOTATION_RECORD = {"field_1": "value_1", "field_2": ["value_2", "value_3"]}
+FIELD_1 = "field_1"
+FIELD_2 = "field_2"
+VALUE_1 = "value_1"
+VALUE_2 = "value_2"
+VALUE_3 = "value_3"
+ANNOTATION_RECORD = {FIELD_1: VALUE_1, FIELD_2: [VALUE_2, VALUE_3]}
 PREFIX_1 = "Prefix_1"
 PREFIX_2 = "Prefix_2"
 ANNOTATION_METADATA_1 = {
@@ -66,6 +71,18 @@ ANNOTATIONS_TO_ADD = [
     {"foo": "bar"},
     {"fu": "bur"},
 ]
+SPLIT_FIELDS = [
+    {
+        constants.SPLIT_FIELDS_NAME: "fu",
+        constants.SPLIT_FIELDS_CHARACTER: ".",
+        constants.SPLIT_FIELDS_INDEX: 0,
+        constants.SPLIT_FIELDS_FIELD: "foo",
+    }
+]
+NEW_VALUE_1 = "new_value_1"
+NEW_VALUE_2 = "new_value_2"
+REPLACEMENT_FIELDS = {FIELD_1: {VALUE_1: NEW_VALUE_1}, FIELD_2: {VALUE_2: NEW_VALUE_2}}
+REPLACEMENT_RECORD = {FIELD_1: NEW_VALUE_1, FIELD_2: [NEW_VALUE_2, VALUE_3]}
 
 
 @pytest.fixture
@@ -74,7 +91,7 @@ def empty_annotation_source():
     return SourceAnnotation(None)
 
 
-def record():
+def create_record():
     """Record for testing.
 
     Not a fixture so can be used within parametrize call, and a
@@ -116,67 +133,105 @@ class TestSourceAnnotation:
     @pytest.mark.parametrize(
         "filter_fields,expected",
         [
-            ({}, record()),
-            ({"field_1": ["value_1"]}, record()),
-            ({"field_1": ["bar"]}, None),
-            ({"field_2": ["value_2"]}, record()),
-            ({"field_2": ["bar"]}, None),
-            ({"field_1": ["value_1"], "field_2": ["bar"]}, None),
+            ({}, create_record()),
+            ({FIELD_1: [VALUE_1]}, create_record()),
+            ({FIELD_1: ["bar"]}, {}),
+            ({FIELD_2: [VALUE_2]}, create_record()),
+            ({FIELD_2: ["bar"]}, {}),
+            ({FIELD_1: [VALUE_1], FIELD_2: ["bar"]}, {}),
         ],
     )
     def test_filter_record(self, filter_fields, expected, empty_annotation_source):
         """Test entire record dropped or maintained when filtered by
         given filter_fields.
         """
-        assert (
-            empty_annotation_source.filter_record(record(), filter_fields) == expected
-        )
+        empty_annotation_source.filter_fields = filter_fields
+        record = create_record()
+        empty_annotation_source.filter_record(record)
+        assert record == expected
 
     @pytest.mark.parametrize(
         "fields_to_keep,expected",
         [
             ([], {}),
-            (["field_1"], {"field_1": "value_1"}),
-            (["field_2"], {"field_2": ["value_2", "value_3"]}),
-            (["field_1", "field_2"], record()),
+            ([FIELD_1], {FIELD_1: VALUE_1}),
+            ([FIELD_2], {FIELD_2: [VALUE_2, VALUE_3]}),
+            ([FIELD_1, FIELD_2], create_record()),
         ],
     )
     def test_retain_fields(self, fields_to_keep, expected, empty_annotation_source):
         """Test fields kept in record only if in given fields_to_keep
         and in record.
         """
-        assert (
-            empty_annotation_source.retain_fields(record(), fields_to_keep) == expected
-        )
+        empty_annotation_source.fields_to_keep = fields_to_keep
+        result = empty_annotation_source.retain_fields(create_record())
+        assert result == expected
 
     @pytest.mark.parametrize(
         "fields_to_drop,expected",
         [
-            ([], record()),
-            (["field_1"], {"field_2": ["value_2", "value_3"]}),
-            (["field_2"], {"field_1": "value_1"}),
-            (["field_1", "field_2"], {}),
+            ([], create_record()),
+            ([FIELD_1], {FIELD_2: [VALUE_2, VALUE_3]}),
+            ([FIELD_2], {FIELD_1: VALUE_1}),
+            ([FIELD_1, FIELD_2], {}),
         ],
     )
     def test_remove_fields(self, fields_to_drop, expected, empty_annotation_source):
         """Test fields dropped from record if in record and in given
         fields_to_drop.
         """
-        assert (
-            empty_annotation_source.remove_fields(record(), fields_to_drop) == expected
-        )
+        empty_annotation_source.fields_to_drop = fields_to_drop
+        record = create_record()
+        empty_annotation_source.remove_fields(record)
+        assert record == expected
+
+    @pytest.mark.parametrize(
+        "record,split_fields,expected",
+        [
+           ({}, [], {}),
+           ({"foo": "bar"}, [], {"foo": "bar"}),
+           ({}, [{}], {}),
+           ({"foo": "bar"}, [{}], {"foo": "bar"}),
+           ({}, SPLIT_FIELDS, {}),
+           ({"foo": "bar"}, SPLIT_FIELDS, {"foo": "bar", "fu": "bar"}),
+           ({"foo": "bar.1"}, SPLIT_FIELDS, {"foo": "bar.1", "fu": "bar"}),
+        ],
+    )
+    def test_create_split_fields(self, record, split_fields, expected, empty_annotation_source):
+        """Test creation of new field in record from existing field using
+        given parameters.
+        """
+        empty_annotation_source.split_fields = split_fields
+        empty_annotation_source.create_split_fields(record)
+        assert record == expected
+
+    @pytest.mark.parametrize(
+        "record,replacement_fields,expected",
+        [
+            (create_record(), {}, create_record()),
+            (create_record(), {"foo": {"fu": "bar"}}, create_record()),
+            (create_record(), {FIELD_1: {"fu": "bar"}}, create_record()),
+            (create_record(), REPLACEMENT_FIELDS, REPLACEMENT_RECORD),
+        ]
+    )
+    def test_make_field_replacements(self, record, replacement_fields, expected,
+            empty_annotation_source):
+        """Test replacing field values according to given parameters."""
+        empty_annotation_source.replacement_fields = replacement_fields 
+        empty_annotation_source.make_field_replacements(record)
+        assert record == expected
 
     @pytest.mark.parametrize(
         "records,filter_fields,fields_to_keep,fields_to_drop,expected",
         [
             ([], None, None, None, []),
-            ([record()], None, None, None, [record()]),
-            ([record()], {"field_1": ["value_1"]}, None, None, [record()]),
-            ([record()], {"field_1": ["bar"]}, None, None, []),
-            ([record()], None, ["field_1", "field_2"], None, [record()]),
-            ([record()], None, ["foo"], None, []),
-            ([record()], None, None, ["field_1", "field_2"], []),
-            ([record()], None, ["field_1", "field_2"], ["field_1"], [record()]),
+            ([create_record()], None, None, None, [create_record()]),
+            ([create_record()], {FIELD_1: [VALUE_1]}, None, None, [create_record()]),
+            ([create_record()], {FIELD_1: ["bar"]}, None, None, []),
+            ([create_record()], None, [FIELD_1, FIELD_2], None, [create_record()]),
+            ([create_record()], None, ["foo"], None, []),
+            ([create_record()], None, None, [FIELD_1, FIELD_2], []),
+            ([create_record()], None, [FIELD_1, FIELD_2], [FIELD_1], [create_record()]),
         ],
     )
     def test_make_annotation(

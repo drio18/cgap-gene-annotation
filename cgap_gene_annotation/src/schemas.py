@@ -53,6 +53,61 @@ ANNOTATION_SOURCE = {
             constants.TYPE: constants.ARRAY,
             constants.ITEMS: {constants.TYPE: constants.STRING},
         },
+        constants.REPLACEMENT_FIELDS: {
+            constants.DESCRIPTION: "Fields with values to rename",
+            constants.TYPE: constants.OBJECT,
+            constants.ADDITIONAL_PROPERTIES: {
+                constants.DESCRIPTION: (
+                    "Mapping of existing field values to replacement value"
+                ),
+                constants.TYPE: constants.OBJECT,
+                constants.ADDITIONAL_PROPERTIES: {
+                    constants.DESCRIPTION: "Replacement value",
+                    constants.TYPE: constants.STRING
+                }
+            }
+        },
+        constants.SPLIT_FIELDS: {
+            constants.DESCRIPTION: (
+                "Parameters for creating a new field out of an"
+                " existing field in the record by splitting the"
+                " existing field value's string"
+            ),
+            constants.TYPE: constants.ARRAY,
+            constants.ITEMS: {
+                constants.TYPE: constants.OBJECT,
+                constants.ADDITIONAL_PROPERTIES: False,
+                constants.PROPERTIES: {
+                    constants.SPLIT_FIELDS_NAME: {
+                        constants.DESCRIPTION: (
+                            "The name for the new field"
+                        ),
+                        constants.TYPE: constants.STRING,
+                    },
+                    constants.SPLIT_FIELDS_CHARACTER: {
+                        constants.DESCRIPTION: (
+                            "The character on which to split the"
+                            " existing field value"
+                        ),
+                        constants.TYPE: constants.STRING,
+                    },
+                    constants.SPLIT_FIELDS_INDEX: {
+                        constants.DESCRIPTION: (
+                            "The index (zero-based) of the existing,"
+                            " split string to use for the new field"
+                        ),
+                        constants.TYPE: "integer",
+                        constants.MINIMUM: 0,
+                    },
+                    constants.SPLIT_FIELDS_FIELD: {
+                        constants.DESCRIPTION: (
+                            "The name of the existing field to split"
+                        ),
+                        constants.TYPE: constants.STRING,
+                    },
+                },
+            },
+        },
         constants.SOURCE: {
             constants.DESCRIPTION: (
                 "Whether annotations are the basis for subsequent annotations"
@@ -206,47 +261,6 @@ ANNOTATION_SOURCE = {
                                 " end of all values from a line"
                             ),
                             constants.TYPE: constants.STRING,
-                        },
-                        constants.parsers.SPLIT_FIELDS: {
-                            constants.DESCRIPTION: (
-                                "Parameters for creating a new field out of an"
-                                " existing field in the record by splitting the"
-                                " existing field value's string"
-                            ),
-                            constants.TYPE: constants.ARRAY,
-                            constants.ITEMS: {
-                                constants.TYPE: constants.OBJECT,
-                                constants.ADDITIONAL_PROPERTIES: False,
-                                constants.PROPERTIES: {
-                                    constants.parsers.SPLIT_FIELDS_NAME: {
-                                        constants.DESCRIPTION: (
-                                            "The name for the new field"
-                                        ),
-                                        constants.TYPE: constants.STRING,
-                                    },
-                                    constants.parsers.SPLIT_FIELDS_CHARACTER: {
-                                        constants.DESCRIPTION: (
-                                            "The character on which to split the"
-                                            " existing field value"
-                                        ),
-                                        constants.TYPE: constants.STRING,
-                                    },
-                                    constants.parsers.SPLIT_FIELDS_INDEX: {
-                                        constants.DESCRIPTION: (
-                                            "The index (zero-based) of the existing,"
-                                            " split string to use for the new field"
-                                        ),
-                                        constants.TYPE: "integer",
-                                        constants.MINIMUM: 0,
-                                    },
-                                    constants.parsers.SPLIT_FIELDS_FIELD: {
-                                        constants.DESCRIPTION: (
-                                            "The name of the existing field to split"
-                                        ),
-                                        constants.TYPE: constants.STRING,
-                                    },
-                                },
-                            },
                         },
                     },
                 },

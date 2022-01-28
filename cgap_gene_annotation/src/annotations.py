@@ -13,13 +13,14 @@ Classes:
 
 import json
 import logging
+from copy import deepcopy
 
 import jsonschema
 
 from . import constants, schemas
 from .cytoband import add_cytoband_field, get_cytoband_locations
 from .merge import AnnotationMerge
-from .utils import FileHandler
+from .utils import nested_getter, nested_setter, FileHandler
 
 
 log = logging.getLogger(__name__)
@@ -45,6 +46,12 @@ class SourceAnnotation:
     :var fields_to_drop: Fieds from the record to exclude from the
         annotation.
     :vartype fields_to_drop: list(str)
+    :var split_fields: vareters for creating new field by
+        splitting existing fields in record.
+    :vartype split_fields: dict
+    :var replacement_fields: Fields and value replacements, used
+        to convert replace given value to desired one.
+    :vartype replacement_fields: dict(dict)
     """
 
     def __init__(
@@ -53,6 +60,8 @@ class SourceAnnotation:
         filter_fields=None,
         fields_to_keep=None,
         fields_to_drop=None,
+        split_fields=None,
+        replacement_fields=None,
     ):
         """Create the class.
 
@@ -66,14 +75,22 @@ class SourceAnnotation:
         :param fields_to_keep: Fields from the record to include in the
             annotation. If present, overrides fields_to_drop.
         :type fields_to_keep: list(str)
-        :param fields_to_drop: Fieds from the record to exclude from the
+        :param fields_to_drop: Fields from the record to exclude from the
             annotation.
         :type fields_to_drop: list(str)
+        :param split_fields: Parameters for creating new field by
+            splitting existing fields in record.
+        :type split_fields: dict
+        :param replacement_fields: Fields and value replacements, used
+            to convert replace given value to desired one.
+        :type replacement_fields: dict(dict)
         """
         self.parser = parser
         self.filter_fields = filter_fields
         self.fields_to_keep = fields_to_keep
         self.fields_to_drop = fields_to_drop
+        self.split_fields = split_fields
+        self.replacement_fields = replacement_fields
 
     def make_annotation(self):
         """Create all annotations for the source file.
@@ -90,23 +107,24 @@ class SourceAnnotation:
         """
         annotation = []
         for record in self.parser.get_records():
+            parsed_record = deepcopy(record)
+            if self.split_fields:
+                self.create_split_fields(record)
+            if self.replacement_fields:
+                self.make_field_replacements(record)
             if self.filter_fields:
-                record = self.filter_record(record, self.filter_fields)
-                if not record:
-                    log.debug("Filtered out record: %s" % record)
-                    continue
-            if self.fields_to_keep or self.fields_to_drop:
-                if self.fields_to_keep:
-                    record = self.retain_fields(record, self.fields_to_keep)
-                elif self.fields_to_drop:
-                    record = self.remove_fields(record, self.fields_to_drop)
-                if not record:
-                    log.debug("Filtered out record: %s" % record)
-                    continue
+                self.filter_record(record)
+            if self.fields_to_keep:
+                record = self.retain_fields(record)
+            elif self.fields_to_drop:
+                self.remove_fields(record)
+            if not record:
+                log.debug("Filtered out record: %s", parsed_record)
+                continue
             annotation.append(record)
         return annotation
 
-    def filter_record(self, record, filter_fields):
+    def filter_record(self, record):
         """Determine record inclusion/exclusion in annotation.
 
         Given fields and permissable values, only keep the record if
@@ -115,59 +133,89 @@ class SourceAnnotation:
 
         :param record: A parsed record from a source file.
         :type record: dict
-        :param filter_fields: The field names and their permissible
-            values to qualify for inclusion in the annotation.
-        :type filter_fields: dict
-        :returns: The incoming record if all filter fields are
-            permissible or None.
-        :rtype: dict or None
         """
-        for field, permissible_values in filter_fields.items():
-            field_value = record.get(field)
+        for field, permissible_values in self.filter_fields.items():
+            field_value = nested_getter(record, field, string_return=True)
             if field_value is None:
-                record = None
+                record.clear()
                 break
             if isinstance(field_value, str):
                 if field_value not in permissible_values:
-                    record = None
+                    record.clear()
                     break
             elif isinstance(field_value, list):
                 intersection = set(field_value).intersection(set(permissible_values))
                 if not intersection:
-                    record = None
+                    record.clear()
                     break
-        return record
 
-    def retain_fields(self, record, fields_to_keep):
+    def retain_fields(self, record):
         """Create record with only the requested fields.
 
         :param record: A parsed record from a source file.
         :type record: dict
-        :param fields_to_keep: The fields to include in the result.
-        :type fields_to_keep: list(str)
-        :returns: A processed record with only the fields requested.
+        :returns: Record with requested fields (if found).
         :rtype: dict
         """
         result = {}
-        for field in fields_to_keep:
-            if record.get(field):
-                result[field] = record[field]
+        for field in self.fields_to_keep:
+            value = nested_getter(record, field, string_return=True)
+            nested_setter(result, field, value)
         return result
 
-    def remove_fields(self, record, fields_to_drop):
+    def remove_fields(self, record):
         """Exclude fields from a record.
 
         :param record: A parsed record from a source file.
         :type record: dict
-        :param fields_to_drop: The fields to exclude from the record.
-        :type fields_to_drop: list(str)
-        :returns: A processed record with requested fields removed.
-        :rtype: dict
         """
-        for field in fields_to_drop:
-            if record.get(field):
-                del record[field]
-        return record
+        for field in self.fields_to_drop:
+            if nested_getter(record, field, string_return=True):
+                nested_setter(record, field, delete_field=True)
+
+    def create_split_fields(self, record):
+        """Split field in record according to parameters, and update
+        the record with the new field.
+
+        Useful for when source file provides Ensembl ID as ID.version
+        and only ID can be matched.
+
+        :param record: The record to update.
+        :type record: dict
+        """
+        for split_field in self.split_fields:
+            field_to_split = split_field.get(constants.SPLIT_FIELDS_FIELD, "")
+            split_character = split_field.get(constants.SPLIT_FIELDS_CHARACTER)
+            split_index = split_field.get(constants.SPLIT_FIELDS_INDEX)
+            field_name = split_field.get(constants.SPLIT_FIELDS_NAME)
+            field_value = nested_getter(record, field_to_split, string_return=True)
+            if isinstance(field_value, str):
+                split_value = field_value.split(split_character)
+                if split_index < len(split_value):
+                    new_value = split_value[split_index]
+                    nested_setter(record, field_name, value=new_value)
+
+    def make_field_replacements(self, record):
+        """Replace existing values for a given field with given desired
+        values.
+
+        Useful for converting source strings to desired strings for
+        final annotation, e.g. "AD" --> "Autosomal Dominant".
+
+        :param record: The record to update.
+        :type record: dict
+        """
+        for field_name, replacement_values in self.replacement_fields.items():
+            field_value = nested_getter(record, field_name, string_return=True)
+            if isinstance(field_value, str):
+                new_value = replacement_values.get(field_value)
+                if new_value is not None:
+                    nested_setter(record, field_name, value=new_value)
+            elif isinstance(field_value, list):
+                for idx, value in enumerate(field_value):
+                    new_value = replacement_values.get(value)
+                    if new_value is not None:
+                        field_value[idx] = new_value
 
 
 class JSONInputError(Exception):
@@ -405,6 +453,8 @@ class GeneAnnotation:
         prefix = annotation_metadata.get(constants.PREFIX)
         merge_info = annotation_metadata.get(constants.MERGE)
         parser_metadata = annotation_metadata.get(constants.PARSER)
+        split_fields = annotation_metadata.get(constants.SPLIT_FIELDS)
+        replacement_fields = annotation_metadata.get(constants.REPLACEMENT_FIELDS)
         filter_fields = annotation_metadata.get(constants.FILTER)
         fields_to_keep = annotation_metadata.get(constants.KEEP_FIELDS)
         fields_to_drop = annotation_metadata.get(constants.DROP_FIELDS)
@@ -418,6 +468,8 @@ class GeneAnnotation:
                 filter_fields=filter_fields,
                 fields_to_keep=fields_to_keep,
                 fields_to_drop=fields_to_drop,
+                split_fields=split_fields,
+                replacement_fields=replacement_fields,
             ).make_annotation()
             if not source_annotation:
                 log.warning("No annotations created from source file: %s", file_path)

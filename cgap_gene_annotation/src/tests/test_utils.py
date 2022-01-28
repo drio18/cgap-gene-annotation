@@ -19,6 +19,32 @@ S3_KEY_GZ = "test_file.gz"
 
 
 @pytest.mark.parametrize(
+    "item,field,value,delete,expected",
+    [
+        ({}, "foo", None, False, {}),
+        ({}, "foo", "bar", False, {"foo": "bar"}),
+        ({}, "foo.fi", "bar", False, {"foo": {"fi": "bar"}}),
+        ({"foo": "bar"}, "foo", None, False, {"foo": "bar"}),
+        ({"foo": "bar"}, "foo", "bur", False, {"foo": "bur"}),
+        ({"foo": "bar"}, "fu", "bur", False, {"foo": "bar", "fu": "bur"}),
+        ({"foo": "bar"}, "foo", None, True, {}),
+        ({"foo": {"fu": "bar"}}, "foo.fu", None, False, {"foo": {"fu": "bar"}}),
+        ({"foo": {"fu": "bar"}}, "foo.fu", "bur", False, {"foo": {"fu": "bur"}}),
+        ({"foo": {"fu": "bar"}}, "foo.fu", "bur", True, {"foo": {}}),
+        ({"foo": {"fu": "bar"}}, "foo.fi", "bur", False, {"foo": {"fu": "bar", "fi":
+            "bur"}}),
+        ({"foo": {"fu": "bar"}}, "foo.fu", None, True, {"foo": {}}),
+        ({"foo.fu": "bar"}, "foo.fu", "bur", False, {"foo.fu": "bur"}),
+        ({"foo.fu": "bar"}, "foo.fu", None, True, {}),
+    ]
+)
+def test_nested_setter(item, field, value, delete, expected):
+    """Test setting/deleting values in potentially nested dict."""
+    utils.nested_setter(item, field, value=value, delete_field=delete)
+    assert item == expected
+
+
+@pytest.mark.parametrize(
     "dict_item,field_to_get,string_return,expected",
     [
         ({}, "foo", False, []),
