@@ -79,6 +79,13 @@ SPLIT_FIELDS = [
         constants.SPLIT_FIELDS_FIELD: "foo",
     }
 ]
+SPLIT_FIELDS_NO_INDEX = [
+    {
+        constants.SPLIT_FIELDS_NAME: "fu",
+        constants.SPLIT_FIELDS_CHARACTER: ".",
+        constants.SPLIT_FIELDS_FIELD: "foo",
+    }
+]
 NEW_VALUE_1 = "new_value_1"
 NEW_VALUE_2 = "new_value_2"
 REPLACEMENT_FIELDS = {FIELD_1: {VALUE_1: NEW_VALUE_1}, FIELD_2: {VALUE_2: NEW_VALUE_2}}
@@ -193,8 +200,11 @@ class TestSourceAnnotation:
            ({}, [{}], {}),
            ({"foo": "bar"}, [{}], {"foo": "bar"}),
            ({}, SPLIT_FIELDS, {}),
+           ({}, SPLIT_FIELDS_NO_INDEX, {}),
            ({"foo": "bar"}, SPLIT_FIELDS, {"foo": "bar", "fu": "bar"}),
            ({"foo": "bar.1"}, SPLIT_FIELDS, {"foo": "bar.1", "fu": "bar"}),
+           ({"foo": "bar"}, SPLIT_FIELDS_NO_INDEX, {"foo": "bar", "fu": ["bar"]}),
+           ({"foo": "bar.1"}, SPLIT_FIELDS_NO_INDEX, {"foo": "bar.1", "fu": ["bar", "1"]}),
         ],
     )
     def test_create_split_fields(self, record, split_fields, expected, empty_annotation_source):
@@ -204,6 +214,30 @@ class TestSourceAnnotation:
         empty_annotation_source.split_fields = split_fields
         empty_annotation_source.create_split_fields(record)
         assert record == expected
+
+    @pytest.mark.parametrize(
+        "to_split,split_character,split_index,expected",
+        [
+            ("", "", None, None),
+            ("", "", 0, None),
+            ("foo", ";", None, ["foo"]),
+            ("foo", ";", 0, "foo"),
+            ("foo", ";", 1, None),
+            ("foo;bar", ";", None, ["foo", "bar"]),
+            ("foo;bar", ";", 0, "foo"),
+            ("foo;bar", ";", 1, "bar"),
+            ("foo;bar", ";", 2, None),
+        ]
+    )
+    def test_get_split_value(self, to_split, split_character, split_index, expected,
+            empty_annotation_source):
+        """Test splitting of string and return of given index or entire
+        resulting list.
+        """
+        result = empty_annotation_source.get_split_value(
+            to_split, split_character, split_index
+        )
+        assert result == expected
 
     @pytest.mark.parametrize(
         "record,replacement_fields,expected",

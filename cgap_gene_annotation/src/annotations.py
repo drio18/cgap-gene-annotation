@@ -190,10 +190,47 @@ class SourceAnnotation:
             field_name = split_field.get(constants.SPLIT_FIELDS_NAME)
             field_value = nested_getter(record, field_to_split, string_return=True)
             if isinstance(field_value, str):
-                split_value = field_value.split(split_character)
-                if split_index < len(split_value):
-                    new_value = split_value[split_index]
-                    nested_setter(record, field_name, value=new_value)
+                split_value = self.get_split_value(
+                    field_value, split_character, split_index
+                )
+                nested_setter(record, field_name, value=split_value)
+            elif isinstance(field_value, list):
+                split_values = []
+                for item in field_value:
+                    if isinstance(item, str):
+                        split_value = self.get_split_value(
+                            item, split_character, split_index
+                        )
+                        if split_value is not None:
+                            split_values.append(split_value)
+                nested_setter(record, field_name, value=split_values)
+
+    def get_split_value(self, to_split, split_character, split_index):
+        """Split field by character and return specified index (if given)
+        or the split list.
+
+        :param to_split: String to split.
+        :type to_split: str
+        :param split_character: Character(s) on which to split.
+        :type split_character: str
+        :param split_index: Index of resulting array corresponding to
+            desired result.
+        :type split_index: int or None
+        :returns: Split list or one of its indices.
+        :rtype: list(str) or str or None
+        """
+        split_value = None
+        result = None
+        try:
+            split_value = [x for x in to_split.split(split_character) if x]
+        except ValueError:
+            log.exception("Unable to split given string: %s", to_split)
+        if split_value is not None:
+            if split_index is not None and split_index < len(split_value):
+                result = split_value[split_index]
+            elif split_index is None:
+                result = split_value
+        return result
 
     def make_field_replacements(self, record):
         """Replace existing values for a given field with given desired

@@ -85,7 +85,12 @@
                             "description": "The name of the existing field to split",
                             "type": "string"
                         }
-                    }
+                    },
+                    "required": [
+                        "name",
+                        "character",
+                        "field"
+                    ]
                 }
             },
             "source": {

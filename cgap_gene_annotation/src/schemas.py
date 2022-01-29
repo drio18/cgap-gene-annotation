@@ -106,6 +106,11 @@ ANNOTATION_SOURCE = {
                         constants.TYPE: constants.STRING,
                     },
                 },
+                constants.REQUIRED: [
+                    constants.SPLIT_FIELDS_NAME,
+                    constants.SPLIT_FIELDS_CHARACTER,
+                    constants.SPLIT_FIELDS_FIELD,
+                ],
             },
         },
         constants.SOURCE: {
