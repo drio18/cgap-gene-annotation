@@ -97,7 +97,6 @@ ANNOTATION_SOURCE = {
                             " split string to use for the new field"
                         ),
                         constants.TYPE: "integer",
-                        constants.MINIMUM: 0,
                     },
                     constants.SPLIT_FIELDS_FIELD: {
                         constants.DESCRIPTION: (
@@ -264,6 +263,12 @@ ANNOTATION_SOURCE = {
                             constants.DESCRIPTION: (
                                 "The characters to be removed from the beginning and"
                                 " end of all values from a line"
+                            ),
+                            constants.TYPE: constants.STRING,
+                        },
+                        constants.parsers.RECORD_PATH: {
+                            constants.DESCRIPTION: (
+                                "Path to the items of interest in XPath-like syntax"
                             ),
                             constants.TYPE: constants.STRING,
                         },

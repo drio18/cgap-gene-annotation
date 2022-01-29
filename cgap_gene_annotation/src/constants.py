@@ -13,6 +13,7 @@ PARSERS_AVAILABLE = {
     "GTF": parsers.GTFParser,
     "GenBank": parsers.GenBankParser,
     "UniProtDAT": parsers.UniProtDATParser,
+    "XML": parsers.XMLParser,
 }
 
 METADATA = "metadata"

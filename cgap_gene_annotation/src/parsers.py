@@ -34,6 +34,7 @@ COMMENT_CHARACTERS = "comment_characters"
 EMPTY_FIELDS = "empty_fields"
 LIST_IDENTIFIER = "list_identifier"
 STRIP_CHARACTERS = "strip_characters"
+RECORD_PATH = "record_path"
 
 
 def get_lines(file_path):

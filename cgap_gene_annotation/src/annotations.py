@@ -222,11 +222,11 @@ class SourceAnnotation:
         split_value = None
         result = None
         try:
-            split_value = [x for x in to_split.split(split_character) if x]
+            split_value = [x.strip() for x in to_split.split(split_character) if x]
         except ValueError:
             log.exception("Unable to split given string: %s", to_split)
         if split_value is not None:
-            if split_index is not None and split_index < len(split_value):
+            if split_index is not None and abs(split_index) < len(split_value):
                 result = split_value[split_index]
             elif split_index is None:
                 result = split_value
