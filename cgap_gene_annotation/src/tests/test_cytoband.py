@@ -15,9 +15,12 @@ CYTOBAND_FILE_CONTENTS = "\n".join(
         "\t".join(["chrX", "0", "4400000", "p22.33", "gneg"]),
     ]
 )
+CYTOBAND_1 = "1p36.33"
+CYTOBAND_2 = "1p36.34"
+CYTOBAND_3 = "Xp22.33"
 EXPECTED_LOCATIONS = {
-    "chr1": [(0, 2300000, "p36.33"), (2300000, 5300000, "p36.34")],
-    "chrX": [(0, 4400000, "p22.33")],
+    "chr1": [(0, 2300000, CYTOBAND_1), (2300000, 5300000, CYTOBAND_2)],
+    "chrX": [(0, 4400000, CYTOBAND_3)],
 }
 PREFIX = "foo"
 CHROMOSOME = "chr"
@@ -29,7 +32,7 @@ POSITION_INDEX = 0
 def make_cytoband_metadata(
     chromosome=CHROMOSOME, start=START, end=END, position_index=POSITION_INDEX
 ):
-    """"""
+    """Create cytoband metadata per parameters for tests."""
     return {
         constants.CHROMOSOME: chromosome,
         constants.START: start,
@@ -45,7 +48,9 @@ def make_cytoband_record(
     end="1000000",
     position_index=POSITION_INDEX,
 ):
-    """"""
+    """Create expected cytoband field in record per parameters for
+    tests.
+    """
     return {
         prefix: {
             CHROMOSOME: chromosome,
@@ -64,7 +69,7 @@ def make_cytoband_record(
     ],
 )
 def test_get_cytoband_locations(reference_contents, expected):
-    """"""
+    """Test creation of cytoband locations from UCSC format file."""
     with mock.patch(
         "cgap_gene_annotation.src.parsers.FileHandler.get_handle",
         return_value=[io.StringIO(reference_contents)],
@@ -82,7 +87,7 @@ def test_get_cytoband_locations(reference_contents, expected):
             PREFIX,
             make_cytoband_metadata(),
             {
-                constants.CYTOBAND: {PREFIX: ["p36.33"]},
+                constants.CYTOBAND: {PREFIX: [CYTOBAND_1]},
                 **make_cytoband_record(),
             },
         ),
@@ -97,7 +102,7 @@ def test_get_cytoband_locations(reference_contents, expected):
             PREFIX,
             make_cytoband_metadata(),
             {
-                constants.CYTOBAND: {PREFIX: ["p36.33"]},
+                constants.CYTOBAND: {PREFIX: [CYTOBAND_1]},
                 **make_cytoband_record(chromosome="chr1"),
             },
         ),
@@ -118,7 +123,7 @@ def test_get_cytoband_locations(reference_contents, expected):
             PREFIX,
             make_cytoband_metadata(),
             {
-                constants.CYTOBAND: {PREFIX: ["p36.33", "p36.34"]},
+                constants.CYTOBAND: {PREFIX: [CYTOBAND_1, CYTOBAND_2]},
                 **make_cytoband_record(end="10000000"),
             },
         ),
@@ -127,7 +132,7 @@ def test_get_cytoband_locations(reference_contents, expected):
             PREFIX,
             make_cytoband_metadata(),
             {
-                constants.CYTOBAND: {PREFIX: ["p36.33"]},
+                constants.CYTOBAND: {PREFIX: [CYTOBAND_1]},
                 **make_cytoband_record(end="2300000"),
             },
         ),
@@ -154,7 +159,7 @@ def test_get_cytoband_locations(reference_contents, expected):
             PREFIX,
             make_cytoband_metadata(position_index=0),
             {
-                constants.CYTOBAND: {PREFIX: ["p36.33", "p36.34"]},
+                constants.CYTOBAND: {PREFIX: [CYTOBAND_1, CYTOBAND_2]},
                 **make_cytoband_record(end="2300001"),
             },
         ),
@@ -163,7 +168,7 @@ def test_get_cytoband_locations(reference_contents, expected):
             PREFIX,
             make_cytoband_metadata(position_index=1),
             {
-                constants.CYTOBAND: {PREFIX: ["p36.33"]},
+                constants.CYTOBAND: {PREFIX: [CYTOBAND_1]},
                 **make_cytoband_record(start="1", end="2300001"),
             },
         ),
@@ -172,7 +177,7 @@ def test_get_cytoband_locations(reference_contents, expected):
             PREFIX,
             make_cytoband_metadata(position_index=0),
             {
-                constants.CYTOBAND: {PREFIX: ["p36.34"]},
+                constants.CYTOBAND: {PREFIX: [CYTOBAND_2]},
                 **make_cytoband_record(start="2300000", end="3300000"),
             },
         ),
@@ -181,7 +186,7 @@ def test_get_cytoband_locations(reference_contents, expected):
             PREFIX,
             make_cytoband_metadata(position_index=1),
             {
-                constants.CYTOBAND: {PREFIX: ["p36.33", "p36.34"]},
+                constants.CYTOBAND: {PREFIX: [CYTOBAND_1, CYTOBAND_2]},
                 **make_cytoband_record(start="2300000", end="3300000"),
             },
         ),
@@ -190,7 +195,7 @@ def test_get_cytoband_locations(reference_contents, expected):
             PREFIX,
             make_cytoband_metadata(start=(constants.START + ".bar")),
             {
-                constants.CYTOBAND: {PREFIX: ["p36.33"]},
+                constants.CYTOBAND: {PREFIX: [CYTOBAND_1]},
                 **make_cytoband_record(start={"bar": "0"}),
             },
         ),
@@ -199,7 +204,7 @@ def test_get_cytoband_locations(reference_contents, expected):
             PREFIX,
             make_cytoband_metadata(end=(constants.END + ".bar")),
             {
-                constants.CYTOBAND: {PREFIX: ["p36.33"]},
+                constants.CYTOBAND: {PREFIX: [CYTOBAND_1]},
                 **make_cytoband_record(end={"bar": "10000"}),
             },
         ),
@@ -220,7 +225,7 @@ def test_get_cytoband_locations(reference_contents, expected):
             PREFIX,
             make_cytoband_metadata(),
             {
-                constants.CYTOBAND: {PREFIX: ["p36.33"]},
+                constants.CYTOBAND: {PREFIX: [CYTOBAND_1]},
                 **make_cytoband_record(start=["0"]),
             },
         ),
@@ -233,6 +238,6 @@ def test_get_cytoband_locations(reference_contents, expected):
     ],
 )
 def test_add_cytoband_field(record, prefix, cytoband_metadata, expected):
-    """Test"""
+    """Test creation of cytoband field for given record."""
     add_cytoband_field(record, prefix, cytoband_metadata, EXPECTED_LOCATIONS)
     assert record == expected

@@ -39,7 +39,8 @@ def get_cytoband_locations(reference_file_path):
         if chromosome and start and end and cytoband:
             start = int(start)
             end = int(end)
-            cytoband_record = (start, end, cytoband)
+            chromosome_stripped = chromosome.replace(CHROMOSOME_START, "")
+            cytoband_record = (start, end, chromosome_stripped + cytoband)
             chromosome_locations = cytoband_locations.get(chromosome)
             if not chromosome_locations:
                 cytoband_locations[chromosome] = [cytoband_record]
