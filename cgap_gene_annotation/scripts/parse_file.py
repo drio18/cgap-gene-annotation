@@ -1,8 +1,8 @@
 import argparse
 import json
 
-from ..src import constants
-from ..src.annotations import GeneAnnotation
+from cgap_gene_annotation.src import constants
+from cgap_gene_annotation.src.annotations import GeneAnnotation
 
 
 def run_parse_file(metadata=None, all_records=False):

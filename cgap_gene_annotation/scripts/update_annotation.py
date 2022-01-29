@@ -1,7 +1,7 @@
 import argparse
 import json
 
-from ..src.annotations import GeneAnnotation
+from cgap_gene_annotation.src.annotations import GeneAnnotation
 
 
 def run_update_annotation(file_path=None, metadata=None):
