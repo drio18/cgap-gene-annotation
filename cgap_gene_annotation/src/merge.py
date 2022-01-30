@@ -69,9 +69,12 @@ class AnnotationMerge:
         annotation indices and values are sets of existing annotation
         indices.
     :vartype new_to_existing_edges: list
+    :var debug: Whether to log debug information for this source.
+    :vartype debug: bool
     """
 
-    def __init__(self, existing_annotation, new_annotation, prefix, merge_info):
+    def __init__(self, existing_annotation, new_annotation, prefix, merge_info,
+            debug=False):
         """Create class and set attributes.
 
         :param existing_annotation: The annotation to merge to.
@@ -83,10 +86,13 @@ class AnnotationMerge:
         :type prefix: str
         :param merge_info: The parameters for performing the merge.
         :type merge_info: dict
+        :param debug: Whether to log debug information for this source.
+        :type debug: bool
         """
         self.existing_annotation = existing_annotation
         self.new_annotation = new_annotation
         self.prefix = prefix
+        self.debug = debug
         (
             self.primary_merge_fields,
             self.secondary_merge_fields,
@@ -173,7 +179,7 @@ class AnnotationMerge:
                 " given merge conditions",
                 len(self.existing_to_new_edges[0])
             )
-            if log.isEnabledFor(logging.DEBUG):
+            if self.debug:
                 for existing_node, new_nodes in self.existing_to_new_edges[0].items():
                     existing_annotation = self.existing_annotation[existing_node]
                     new_annotations = []

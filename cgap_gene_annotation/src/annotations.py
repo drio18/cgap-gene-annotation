@@ -52,6 +52,8 @@ class SourceAnnotation:
     :var replacement_fields: Fields and value replacements, used
         to convert replace given value to desired one.
     :vartype replacement_fields: dict(dict)
+    :var debug: Whether to log debug information for this source.
+    :vartype debug: bool
     """
 
     def __init__(
@@ -62,6 +64,7 @@ class SourceAnnotation:
         fields_to_drop=None,
         split_fields=None,
         replacement_fields=None,
+        debug=False,
     ):
         """Create the class.
 
@@ -84,6 +87,8 @@ class SourceAnnotation:
         :param replacement_fields: Fields and value replacements, used
             to convert replace given value to desired one.
         :type replacement_fields: dict(dict)
+        :param debug: Whether to log debug information for this source.
+        :type debug: bool
         """
         self.parser = parser
         self.filter_fields = filter_fields
@@ -91,6 +96,7 @@ class SourceAnnotation:
         self.fields_to_drop = fields_to_drop
         self.split_fields = split_fields
         self.replacement_fields = replacement_fields
+        self.debug = debug
 
     def make_annotation(self):
         """Create all annotations for the source file.
@@ -123,7 +129,8 @@ class SourceAnnotation:
                 self.remove_fields(record)
             if not record:
                 filtered_out_count += 1
-                log.debug("Filtered out record: %s", parsed_record)
+                if self.debug:
+                    log.debug("Filtered out record: %s", parsed_record)
                 continue
             annotation.append(record)
         log.info(
@@ -528,6 +535,7 @@ class GeneAnnotation:
         fields_to_drop = annotation_metadata.get(constants.DROP_FIELDS)
         base_annotation = annotation_metadata.get(constants.SOURCE)
         cytoband_metadata = annotation_metadata.get(constants.CYTOBAND)
+        debug = annotation_metadata.get(constants.DEBUG)
         for file_path in files:
             log.info("Creating annotations from source file: %s", file_path)
             parser = self.create_parser(file_path, parser_metadata)
@@ -538,6 +546,7 @@ class GeneAnnotation:
                 fields_to_drop=fields_to_drop,
                 split_fields=split_fields,
                 replacement_fields=replacement_fields,
+                debug=debug,
             ).make_annotation()
             if not source_annotation:
                 log.warning("No annotations created from source file: %s", file_path)
@@ -555,12 +564,13 @@ class GeneAnnotation:
                         file_path,
                     )
                     AnnotationMerge(
-                        self.annotations, source_annotation, prefix, merge_info
+                        self.annotations, source_annotation, prefix, merge_info,
+                        debug=debug,
                     ).merge_annotations()
         if cytoband_metadata:
-            self.add_cytoband_to_annotations(prefix, cytoband_metadata)
+            self.add_cytoband_to_annotations(prefix, cytoband_metadata, debug=debug)
 
-    def add_cytoband_to_annotations(self, prefix, cytoband_metadata):
+    def add_cytoband_to_annotations(self, prefix, cytoband_metadata, debug=False):
         """Add calculated cytobands to all records for which
         calculation is feasible.
 
@@ -576,7 +586,8 @@ class GeneAnnotation:
             for record in self.annotations:
                 if record.get(prefix):
                     add_cytoband_field(
-                        record, prefix, cytoband_metadata, cytoband_locations
+                        record, prefix, cytoband_metadata, cytoband_locations,
+                        debug=debug
                     )
         else:
             log.info(

@@ -114,7 +114,13 @@ ANNOTATION_SOURCE = {
         },
         constants.SOURCE: {
             constants.DESCRIPTION: (
-                "Whether annotations are the basis for subsequent annotations"
+                "Whether annotations are the basis for subsequent annotation merges"
+            ),
+            constants.TYPE: constants.BOOLEAN,
+        },
+        constants.DEBUG: {
+            constants.DESCRIPTION: (
+                "Whether to log debug information for this annotation source"
             ),
             constants.TYPE: constants.BOOLEAN,
         },

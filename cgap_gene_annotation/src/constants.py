@@ -54,6 +54,8 @@ PARSER_CHOICE = "type"
 
 PREFIX = "prefix"
 
+DEBUG = "debug"
+
 CYTOBAND = "cytoband"
 CHROMOSOME = "chromosome"
 START = "start"

@@ -49,7 +49,8 @@ def get_cytoband_locations(reference_file_path):
     return cytoband_locations
 
 
-def add_cytoband_field(record, prefix, cytoband_metadata, reference_locations):
+def add_cytoband_field(record, prefix, cytoband_metadata, reference_locations,
+        debug=False):
     """Update/create cytoband entry in record if cytoband match found.
 
     Note: reference_locations input generated from
@@ -60,12 +61,13 @@ def add_cytoband_field(record, prefix, cytoband_metadata, reference_locations):
     :param prefix: Prefix for annotation source from which cytoband info
         is being parsed.
     :type prefix: str
-    :param cytoband_metadata: Metadata provided in annotation creation
-        according to schema
+    :param cytoband_metadata: Parameters for calculating cytoband.
     :type cytoband_metadata: dict
     :param reference_locations: Cytoband positions generated from given
         UCSC reference file.
     :type: reference_locations: dict
+    :param debug: Whether to log debug information for this source.
+    :type debug: bool
     """
     cytobands = []
     prefix_record = record.get(prefix)
@@ -90,7 +92,7 @@ def add_cytoband_field(record, prefix, cytoband_metadata, reference_locations):
         end = None
     if prefix_record and chromosome and start is not None and end is not None:
         chromosome_cytobands = reference_locations.get(chromosome, [])
-        if not chromosome_cytobands:
+        if debug and not chromosome_cytobands:
             log.debug(
                 "Chromosome (%s) not found in cytobands from reference file for prefix"
                 " (%s)",
@@ -106,7 +108,7 @@ def add_cytoband_field(record, prefix, cytoband_metadata, reference_locations):
                 cytobands.append(cytoband_name)
             elif start_found and end <= cytoband_start:
                 break
-    else:
+    elif debug:
         log.debug(
             "Could not add cytoband information due to missing information for record:"
             " %s",
