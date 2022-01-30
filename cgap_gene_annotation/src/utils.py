@@ -60,15 +60,20 @@ def nested_setter(item, field_to_set, value=None, delete_field=False):
             nested_item_value = item.get(current_field)
             if isinstance(nested_item_value, dict):
                 nested_setter(
-                    nested_item_value, field_to_set, value=value, delete_field=delete_field
+                    nested_item_value,
+                    field_to_set,
+                    value=value,
+                    delete_field=delete_field,
                 )
             elif nested_item_value is None and value is not None:
                 if fields:
                     current_field_value = {}
                     item[current_field] = current_field_value
                     nested_setter(
-                        current_field_value, field_to_set, value=value,
-                        delete_field=delete_field
+                        current_field_value,
+                        field_to_set,
+                        value=value,
+                        delete_field=delete_field,
                     )
                 else:
                     item[current_field] = value
@@ -254,14 +259,14 @@ class FileHandler:
                 "Could not find a file on S3 in the given bucket.\n"
                 "Bucket: %s\n"
                 "File: %s\n",
-                bucket, key
+                bucket,
+                key,
             )
         except s3_client.exceptions.ClientError:
             log.exception(
-                "Could not open a file on S3.\n"
-                "Bucket: %s\n"
-                "File: %s\n",
-                bucket, key
+                "Could not open a file on S3.\n" "Bucket: %s\n" "File: %s\n",
+                bucket,
+                key,
             )
 
 
@@ -277,6 +282,7 @@ def configure_log(file_path, log_level):
     if not isinstance(numeric_level, int):
         raise ValueError("Invalid log level: %s" % log_level)
     logging.basicConfig(
-        filename=file_path, level=numeric_level,
-        format="%(asctime)s %(levelname)s [%(name)s]\t%(message)s"
+        filename=file_path,
+        level=numeric_level,
+        format="%(asctime)s %(levelname)s [%(name)s]\t%(message)s",
     )

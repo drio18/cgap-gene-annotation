@@ -31,12 +31,17 @@ S3_KEY_GZ = "test_file.gz"
         ({"foo": {"fu": "bar"}}, "foo.fu", None, False, {"foo": {"fu": "bar"}}),
         ({"foo": {"fu": "bar"}}, "foo.fu", "bur", False, {"foo": {"fu": "bur"}}),
         ({"foo": {"fu": "bar"}}, "foo.fu", "bur", True, {"foo": {}}),
-        ({"foo": {"fu": "bar"}}, "foo.fi", "bur", False, {"foo": {"fu": "bar", "fi":
-            "bur"}}),
+        (
+            {"foo": {"fu": "bar"}},
+            "foo.fi",
+            "bur",
+            False,
+            {"foo": {"fu": "bar", "fi": "bur"}},
+        ),
         ({"foo": {"fu": "bar"}}, "foo.fu", None, True, {"foo": {}}),
         ({"foo.fu": "bar"}, "foo.fu", "bur", False, {"foo.fu": "bur"}),
         ({"foo.fu": "bar"}, "foo.fu", None, True, {}),
-    ]
+    ],
 )
 def test_nested_setter(item, field, value, delete, expected):
     """Test setting/deleting values in potentially nested dict."""

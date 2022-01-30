@@ -49,8 +49,9 @@ def get_cytoband_locations(reference_file_path):
     return cytoband_locations
 
 
-def add_cytoband_field(record, prefix, cytoband_metadata, reference_locations,
-        debug=False):
+def add_cytoband_field(
+    record, prefix, cytoband_metadata, reference_locations, debug=False
+):
     """Update/create cytoband entry in record if cytoband match found.
 
     Note: reference_locations input generated from

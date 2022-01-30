@@ -83,8 +83,7 @@
                                 },
                                 "index": {
                                     "description": "The index (zero-based) of the existing, split string to use for the new field",
-                                    "type": "integer",
-                                    "minimum": 0
+                                    "type": "integer"
                                 },
                                 "field": {
                                     "description": "The name of the existing field to split",
@@ -99,7 +98,11 @@
                         }
                     },
                     "source": {
-                        "description": "Whether annotations are the basis for subsequent annotations",
+                        "description": "Whether annotations are the basis for subsequent annotation merges",
+                        "type": "boolean"
+                    },
+                    "debug": {
+                        "description": "Whether to log debug information for this annotation source",
                         "type": "boolean"
                     },
                     "cytoband": {
@@ -231,6 +234,10 @@
                                     "strip_characters": {
                                         "description": "The characters to be removed from the beginning and end of all values from a line",
                                         "type": "string"
+                                    },
+                                    "record_path": {
+                                        "description": "Path to the items of interest in XPath-like syntax",
+                                        "type": "string"
                                     }
                                 }
                             },
@@ -242,7 +249,8 @@
                                     "CSV",
                                     "GTF",
                                     "GenBank",
-                                    "UniProtDAT"
+                                    "UniProtDAT",
+                                    "XML"
                                 ]
                             }
                         }
@@ -337,8 +345,7 @@
                                 },
                                 "index": {
                                     "description": "The index (zero-based) of the existing, split string to use for the new field",
-                                    "type": "integer",
-                                    "minimum": 0
+                                    "type": "integer"
                                 },
                                 "field": {
                                     "description": "The name of the existing field to split",
@@ -353,7 +360,11 @@
                         }
                     },
                     "source": {
-                        "description": "Whether annotations are the basis for subsequent annotations",
+                        "description": "Whether annotations are the basis for subsequent annotation merges",
+                        "type": "boolean"
+                    },
+                    "debug": {
+                        "description": "Whether to log debug information for this annotation source",
                         "type": "boolean"
                     },
                     "cytoband": {
@@ -485,6 +496,10 @@
                                     "strip_characters": {
                                         "description": "The characters to be removed from the beginning and end of all values from a line",
                                         "type": "string"
+                                    },
+                                    "record_path": {
+                                        "description": "Path to the items of interest in XPath-like syntax",
+                                        "type": "string"
                                     }
                                 }
                             },
@@ -496,7 +511,8 @@
                                     "CSV",
                                     "GTF",
                                     "GenBank",
-                                    "UniProtDAT"
+                                    "UniProtDAT",
+                                    "XML"
                                 ]
                             }
                         }

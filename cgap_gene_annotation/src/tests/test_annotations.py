@@ -195,19 +195,25 @@ class TestSourceAnnotation:
     @pytest.mark.parametrize(
         "record,split_fields,expected",
         [
-           ({}, [], {}),
-           ({"foo": "bar"}, [], {"foo": "bar"}),
-           ({}, [{}], {}),
-           ({"foo": "bar"}, [{}], {"foo": "bar"}),
-           ({}, SPLIT_FIELDS, {}),
-           ({}, SPLIT_FIELDS_NO_INDEX, {}),
-           ({"foo": "bar"}, SPLIT_FIELDS, {"foo": "bar", "fu": "bar"}),
-           ({"foo": "bar.1"}, SPLIT_FIELDS, {"foo": "bar.1", "fu": "bar"}),
-           ({"foo": "bar"}, SPLIT_FIELDS_NO_INDEX, {"foo": "bar", "fu": ["bar"]}),
-           ({"foo": "bar.1"}, SPLIT_FIELDS_NO_INDEX, {"foo": "bar.1", "fu": ["bar", "1"]}),
+            ({}, [], {}),
+            ({"foo": "bar"}, [], {"foo": "bar"}),
+            ({}, [{}], {}),
+            ({"foo": "bar"}, [{}], {"foo": "bar"}),
+            ({}, SPLIT_FIELDS, {}),
+            ({}, SPLIT_FIELDS_NO_INDEX, {}),
+            ({"foo": "bar"}, SPLIT_FIELDS, {"foo": "bar", "fu": "bar"}),
+            ({"foo": "bar.1"}, SPLIT_FIELDS, {"foo": "bar.1", "fu": "bar"}),
+            ({"foo": "bar"}, SPLIT_FIELDS_NO_INDEX, {"foo": "bar", "fu": ["bar"]}),
+            (
+                {"foo": "bar.1"},
+                SPLIT_FIELDS_NO_INDEX,
+                {"foo": "bar.1", "fu": ["bar", "1"]},
+            ),
         ],
     )
-    def test_create_split_fields(self, record, split_fields, expected, empty_annotation_source):
+    def test_create_split_fields(
+        self, record, split_fields, expected, empty_annotation_source
+    ):
         """Test creation of new field in record from existing field using
         given parameters.
         """
@@ -227,10 +233,11 @@ class TestSourceAnnotation:
             ("foo;bar", ";", 0, "foo"),
             ("foo;bar", ";", 1, "bar"),
             ("foo;bar", ";", 2, None),
-        ]
+        ],
     )
-    def test_get_split_value(self, to_split, split_character, split_index, expected,
-            empty_annotation_source):
+    def test_get_split_value(
+        self, to_split, split_character, split_index, expected, empty_annotation_source
+    ):
         """Test splitting of string and return of given index or entire
         resulting list.
         """
@@ -246,12 +253,13 @@ class TestSourceAnnotation:
             (create_record(), {"foo": {"fu": "bar"}}, create_record()),
             (create_record(), {FIELD_1: {"fu": "bar"}}, create_record()),
             (create_record(), REPLACEMENT_FIELDS, REPLACEMENT_RECORD),
-        ]
+        ],
     )
-    def test_make_field_replacements(self, record, replacement_fields, expected,
-            empty_annotation_source):
+    def test_make_field_replacements(
+        self, record, replacement_fields, expected, empty_annotation_source
+    ):
         """Test replacing field values according to given parameters."""
-        empty_annotation_source.replacement_fields = replacement_fields 
+        empty_annotation_source.replacement_fields = replacement_fields
         empty_annotation_source.make_field_replacements(record)
         assert record == expected
 

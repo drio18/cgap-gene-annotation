@@ -63,9 +63,9 @@ ANNOTATION_SOURCE = {
                 constants.TYPE: constants.OBJECT,
                 constants.ADDITIONAL_PROPERTIES: {
                     constants.DESCRIPTION: "Replacement value",
-                    constants.TYPE: constants.STRING
-                }
-            }
+                    constants.TYPE: constants.STRING,
+                },
+            },
         },
         constants.SPLIT_FIELDS: {
             constants.DESCRIPTION: (
@@ -79,9 +79,7 @@ ANNOTATION_SOURCE = {
                 constants.ADDITIONAL_PROPERTIES: False,
                 constants.PROPERTIES: {
                     constants.SPLIT_FIELDS_NAME: {
-                        constants.DESCRIPTION: (
-                            "The name for the new field"
-                        ),
+                        constants.DESCRIPTION: ("The name for the new field"),
                         constants.TYPE: constants.STRING,
                     },
                     constants.SPLIT_FIELDS_CHARACTER: {

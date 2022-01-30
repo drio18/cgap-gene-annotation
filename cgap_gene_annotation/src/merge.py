@@ -73,8 +73,9 @@ class AnnotationMerge:
     :vartype debug: bool
     """
 
-    def __init__(self, existing_annotation, new_annotation, prefix, merge_info,
-            debug=False):
+    def __init__(
+        self, existing_annotation, new_annotation, prefix, merge_info, debug=False
+    ):
         """Create class and set attributes.
 
         :param existing_annotation: The annotation to merge to.
@@ -177,7 +178,7 @@ class AnnotationMerge:
             log.info(
                 "%s existing annotations could not be matched to new annotations using"
                 " given merge conditions",
-                len(self.existing_to_new_edges[0])
+                len(self.existing_to_new_edges[0]),
             )
             if self.debug:
                 for existing_node, new_nodes in self.existing_to_new_edges[0].items():
@@ -195,7 +196,7 @@ class AnnotationMerge:
         log.info(
             "Finished merging new annotations to existing annotations under following"
             " prefix: %s",
-            self.prefix
+            self.prefix,
         )
 
     def join_annotations(self, merge_fields):

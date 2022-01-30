@@ -564,7 +564,10 @@ class GeneAnnotation:
                         file_path,
                     )
                     AnnotationMerge(
-                        self.annotations, source_annotation, prefix, merge_info,
+                        self.annotations,
+                        source_annotation,
+                        prefix,
+                        merge_info,
                         debug=debug,
                     ).merge_annotations()
         if cytoband_metadata:
@@ -586,8 +589,11 @@ class GeneAnnotation:
             for record in self.annotations:
                 if record.get(prefix):
                     add_cytoband_field(
-                        record, prefix, cytoband_metadata, cytoband_locations,
-                        debug=debug
+                        record,
+                        prefix,
+                        cytoband_metadata,
+                        cytoband_locations,
+                        debug=debug,
                     )
         else:
             log.info(
