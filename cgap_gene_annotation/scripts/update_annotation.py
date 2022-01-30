@@ -36,7 +36,7 @@ def main():
         type=str,
         help="Logging level",
         choices=["debug", "info", "warning"],
-        default="info",
+        default="debug",
     )
     args = parser.parse_args()
     configure_log(args.log_file, args.log_level)
