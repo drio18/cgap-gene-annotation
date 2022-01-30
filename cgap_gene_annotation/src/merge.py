@@ -6,6 +6,7 @@ Classes:
         merging a new annotation.
 """
 
+import json
 import logging
 
 from . import constants
@@ -177,8 +178,9 @@ class AnnotationMerge:
         if self.existing_to_new_edges:
             log.info(
                 "%s existing annotations could not be matched to new annotations using"
-                " given merge conditions",
+                " given merge conditions for prefix: %s",
                 len(self.existing_to_new_edges[0]),
+                self.prefix,
             )
             if self.debug:
                 for existing_node, new_nodes in self.existing_to_new_edges[0].items():
@@ -188,14 +190,13 @@ class AnnotationMerge:
                         new_annotations.append(self.new_annotation[node])
                     log.debug(
                         "Could not match existing annotation with new annotation(s):"
-                        " %s, %s",
-                        existing_annotation,
-                        new_annotations,
+                        "\n%s,\n%s",
+                        json.dumps(existing_annotation, indent=4),
+                        json.dumps(new_annotations, indent=4),
                     )
         self.new_annotation.clear()
         log.info(
-            "Finished merging new annotations to existing annotations under following"
-            " prefix: %s",
+            "Finished merging new annotations to existing annotations for prefix: %s",
             self.prefix,
         )
 
@@ -379,9 +380,9 @@ class AnnotationMerge:
                 existing_annotation[self.prefix].append(self.new_annotation[node])
                 if self.debug:
                     log.debug(
-                        "Merged a pair of annotations: %s, %s",
-                        existing_annotation,
-                        self.new_annotation[node],
+                        "Merged a pair of annotations:\n%s,\n%s",
+                        json.dumps(existing_annotation, indent=4),
+                        json.dumps(self.new_annotation[node], indent=4),
                     )
         log.info("Merged %s annotations for prefix: %s", merge_count, self.prefix)
         if pruned_existing_to_new:

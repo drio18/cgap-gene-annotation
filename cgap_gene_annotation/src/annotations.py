@@ -130,7 +130,9 @@ class SourceAnnotation:
             if not record:
                 filtered_out_count += 1
                 if self.debug:
-                    log.debug("Filtered out record: %s", parsed_record)
+                    log.debug(
+                        "Filtered out record: %s", json.dumps(parsed_record, indent=4)
+                    )
                 continue
             annotation.append(record)
         log.info(
@@ -567,7 +569,7 @@ class GeneAnnotation:
                         self.annotations,
                         source_annotation,
                         prefix,
-                        merge_info,
+                        deepcopy(merge_info),
                         debug=debug,
                     ).merge_annotations()
         if cytoband_metadata:
