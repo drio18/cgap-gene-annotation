@@ -535,7 +535,7 @@ class GeneAnnotation:
         fields_to_drop = annotation_metadata.get(constants.DROP_FIELDS)
         base_annotation = annotation_metadata.get(constants.SOURCE)
         cytoband_metadata = annotation_metadata.get(constants.CYTOBAND)
-        debug = annotation_metadata.get(constants.DEBUG)
+        debug = annotation_metadata.get(constants.DEBUG, False)
         for file_path in files:
             log.info("Creating annotations from source file: %s", file_path)
             parser = self.create_parser(file_path, parser_metadata)

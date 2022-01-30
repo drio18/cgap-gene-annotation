@@ -366,20 +366,24 @@ class AnnotationMerge:
         For matches that do meet mapping constraints, update the
         existing annotation with the new values.
         """
+        merge_count = 0
         pruned_new_to_existing, pruned_existing_to_new = self.prune_to_unique_edges()
         existing_to_new_edges = {}
         if self.existing_to_new_edges:
             existing_to_new_edges = self.existing_to_new_edges[0]
         for existing_node, new_nodes in existing_to_new_edges.items():
+            merge_count += 1
             existing_annotation = self.existing_annotation[existing_node]
             existing_annotation[self.prefix] = []
             for node in new_nodes:
                 existing_annotation[self.prefix].append(self.new_annotation[node])
-                log.debug(
-                    "Merged a pair of annotations: %s, %s",
-                    existing_annotation,
-                    self.new_annotation[node],
-                )
+                if self.debug:
+                    log.debug(
+                        "Merged a pair of annotations: %s, %s",
+                        existing_annotation,
+                        self.new_annotation[node],
+                    )
+        log.info("Merged %s annotations for prefix: %s", merge_count, self.prefix)
         if pruned_existing_to_new:
             self.existing_to_new_edges = [pruned_existing_to_new]
         else:
