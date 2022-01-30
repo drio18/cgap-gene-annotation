@@ -1,7 +1,9 @@
 import argparse
 import json
+import logging
 
 from cgap_gene_annotation.src.annotations import GeneAnnotation
+from cgap_gene_annotation.src.utils import configure_log
 
 
 def run_create_annotation(file_path=None, metadata=None):
@@ -30,7 +32,13 @@ def main():
     parser.add_argument(
         "metadata", type=str, help="Path to the JSON file with annotation metadata"
     )
+    parser.add_argument("--log-file", "-f", type=str, help="Path for logging file")
+    parser.add_argument(
+        "--log-level", "-l", type=str, help="Logging level",
+        choices=["debug", "info", "warning"], default="info"
+    )
     args = parser.parse_args()
+    configure_log(args.log_file, args.log_level)
     run_create_annotation(file_path=args.file, metadata=args.metadata)
 
 

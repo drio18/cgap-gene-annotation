@@ -199,7 +199,7 @@ class FileHandler:
                 ) as file_handle:
                     yield file_handle
         except (FileNotFoundError, OSError):
-            log.exception("Could not open file: %s" % self.file_path)
+            log.exception("Could not open file: %s", self.file_path)
 
     def get_s3_parameters(self):
         """Check if file is on AWS S3.
@@ -253,11 +253,30 @@ class FileHandler:
             log.exception(
                 "Could not find a file on S3 in the given bucket.\n"
                 "Bucket: %s\n"
-                "File: %s\n" % (bucket, key)
+                "File: %s\n",
+                bucket, key
             )
         except s3_client.exceptions.ClientError:
             log.exception(
                 "Could not open a file on S3.\n"
                 "Bucket: %s\n"
-                "File: %s\n" % (bucket, key)
+                "File: %s\n",
+                bucket, key
             )
+
+
+def configure_log(file_path, log_level):
+    """Set up logging.
+
+    :param file_path: Path to log file.
+    :type file_path: str
+    :param log_level: Logging level.
+    :type log_level: str
+    """
+    numeric_level = getattr(logging, log_level.upper(), None)
+    if not isinstance(numeric_level, int):
+        raise ValueError("Invalid log level: %s" % log_level)
+    logging.basicConfig(
+        filename=file_path, level=numeric_level,
+        format="%(asctime)s %(levelname)s [%(name)s]\t%(message)s"
+    )

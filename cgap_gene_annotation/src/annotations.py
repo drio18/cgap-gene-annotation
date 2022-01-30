@@ -106,7 +106,10 @@ class SourceAnnotation:
         :rtype: list(dict)
         """
         annotation = []
+        record_count = 0
+        filtered_out_count = 0
         for record in self.parser.get_records():
+            record_count += 1
             parsed_record = deepcopy(record)
             if self.split_fields:
                 self.create_split_fields(record)
@@ -119,9 +122,16 @@ class SourceAnnotation:
             elif self.fields_to_drop:
                 self.remove_fields(record)
             if not record:
+                filtered_out_count += 1
                 log.debug("Filtered out record: %s", parsed_record)
                 continue
             annotation.append(record)
+        log.info(
+            "Parsed %s records from file %s. %s records were filtered out.",
+            record_count,
+            self.parser.file_path,
+            filtered_out_count,
+        )
         return annotation
 
     def filter_record(self, record):
@@ -329,7 +339,7 @@ class GeneAnnotation:
         :type file_path: str
         """
         self.file_path = file_path
-        self.metadata = {}
+        self.metadata = []
         self.annotations = []
 
     def create_annotation(self, json_input):
@@ -441,13 +451,33 @@ class GeneAnnotation:
         :param identifier: The identifier for the annotation source.
         :type identifier: str
         """
+        removal_count = 0
+        cytoband_removal_count = 0
         for item in self.annotations:
             if item.get(identifier):
                 del item[identifier]
+                removal_count += 1
             if item.get(constants.CYTOBAND, {}).get(identifier):
                 del item[constants.CYTOBAND][identifier]
-        if identifier in self.metadata:
-            del self.metadata[identifier]
+                cytoband_removal_count += 1
+        if removal_count:
+            log.info(
+                "Removed %s information from %s annotations", identifier, removal_count
+            )
+        if cytoband_removal_count:
+            log.info(
+                "Removed %s cytoband information from %s annotations",
+                identifier,
+                cytoband_removal_count,
+            )
+        metadata_indices_to_remove = []
+        for idx, metadata in enumerate(self.metadata):
+            if metadata[constants.PREFIX] == identifier:
+                metadata_indices_to_remove.append(idx)
+        if metadata_indices_to_remove:
+            log.info("Removed %s information from metadata", identifier)
+            for idx in metadata_indices_to_remove:
+                del self.metadata[idx]
 
     def parse_file(self):
         """Load the existing information for the complete annotation.
@@ -465,15 +495,15 @@ class GeneAnnotation:
         metadata = contents.get(constants.METADATA)
         annotations = contents.get(constants.ANNOTATION)
         if not metadata:
-            logging.warning("No annotation metadata found in file: %s", self.file_path)
+            log.warning("No annotation metadata found in file: %s", self.file_path)
         else:
             self.metadata = metadata
-            logging.info("Existing annotations' metadata found.")
+            log.info("Existing annotations' metadata found.")
         if not annotations:
-            logging.warning("No annotations found in existing file: %s", self.file_path)
+            log.warning("No annotations found in existing file: %s", self.file_path)
         else:
             self.annotations = annotations
-            logging.info("Existing annotations found.")
+            log.info("Existing annotations found.")
 
     def add_source(self, annotation_metadata):
         """Add metadata and annotations from a source file.
@@ -486,6 +516,7 @@ class GeneAnnotation:
             annotation (e.g. parsing, merging, etc.)
         :type annotation_metadata: dict
         """
+        self.metadata += annotation_metadata
         files = annotation_metadata.get(constants.FILES, [])
         prefix = annotation_metadata.get(constants.PREFIX)
         merge_info = annotation_metadata.get(constants.MERGE)
@@ -496,9 +527,9 @@ class GeneAnnotation:
         fields_to_keep = annotation_metadata.get(constants.KEEP_FIELDS)
         fields_to_drop = annotation_metadata.get(constants.DROP_FIELDS)
         base_annotation = annotation_metadata.get(constants.SOURCE)
-        metadata = annotation_metadata.get(constants.METADATA)
         cytoband_metadata = annotation_metadata.get(constants.CYTOBAND)
         for file_path in files:
+            log.info("Creating annotations from source file: %s", file_path)
             parser = self.create_parser(file_path, parser_metadata)
             source_annotation = SourceAnnotation(
                 parser,
@@ -526,8 +557,6 @@ class GeneAnnotation:
                     AnnotationMerge(
                         self.annotations, source_annotation, prefix, merge_info
                     ).merge_annotations()
-        if prefix and metadata:
-            self.metadata[prefix] = metadata
         if cytoband_metadata:
             self.add_cytoband_to_annotations(prefix, cytoband_metadata)
 

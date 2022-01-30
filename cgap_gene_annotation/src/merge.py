@@ -12,6 +12,9 @@ from . import constants
 from .utils import nested_getter
 
 
+log = logging.getLogger(__name__)
+
+
 class AnnotationMerge:
     """Class for merging a new annotation to an existing one.
 
@@ -46,9 +49,6 @@ class AnnotationMerge:
     :var prefix: The prefix term to use for the new annotation
         when merged in.
     :vartype prefix: str
-    :var debug: Whether to log detailed information for
-        debugging.
-    :vartype debug: bool
     :var primary_merge_fields: The merge fields for which annotations
         must match.
     :vartype primary_merge_fields: list(list(str))
@@ -71,9 +71,7 @@ class AnnotationMerge:
     :vartype new_to_existing_edges: list
     """
 
-    def __init__(
-        self, existing_annotation, new_annotation, prefix, merge_info, debug=False
-    ):
+    def __init__(self, existing_annotation, new_annotation, prefix, merge_info):
         """Create class and set attributes.
 
         :param existing_annotation: The annotation to merge to.
@@ -85,14 +83,10 @@ class AnnotationMerge:
         :type prefix: str
         :param merge_info: The parameters for performing the merge.
         :type merge_info: dict
-        :param debug: Whether to log detailed information for
-            debugging.
-        :type debug: bool
         """
         self.existing_annotation = existing_annotation
         self.new_annotation = new_annotation
         self.prefix = prefix
-        self.debug = debug
         (
             self.primary_merge_fields,
             self.secondary_merge_fields,
@@ -159,7 +153,7 @@ class AnnotationMerge:
         The existing annotations are modified in place, while the new
         annotations are eventually deleted to remove from memory.
         """
-        logging.info(
+        log.info(
             "Merging fields to existing annotation under following prefix: %s",
             self.prefix,
         )
@@ -168,37 +162,34 @@ class AnnotationMerge:
         self.intersect_edges(self.existing_to_new_edges)
         self.intersect_edges(self.new_to_existing_edges)
         self.add_merged_annotations()
-        if self.existing_to_new_edges:
-            logging.info(
-                "%s existing annotations could not be matched to new annotations using"
-                " primary fields given merge conditions"
-                % len(self.existing_to_new_edges[0])
-            )
         while self.existing_to_new_edges and self.secondary_merge_fields:
             self.join_annotations(self.secondary_merge_fields)
             self.intersect_edges(self.existing_to_new_edges)
             self.intersect_edges(self.new_to_existing_edges)
             self.add_merged_annotations()
         if self.existing_to_new_edges:
-            logging.info(
+            log.info(
                 "%s existing annotations could not be matched to new annotations using"
-                " primary and secondary fields given merge conditions"
-                % len(self.existing_to_new_edges[0])
+                " given merge conditions",
+                len(self.existing_to_new_edges[0])
             )
-            if self.debug:
+            if log.isEnabledFor(logging.DEBUG):
                 for existing_node, new_nodes in self.existing_to_new_edges[0].items():
                     existing_annotation = self.existing_annotation[existing_node]
                     new_annotations = []
                     for node in new_nodes:
                         new_annotations.append(self.new_annotation[node])
-                    logging.debug(
+                    log.debug(
                         "Could not match existing annotation with new annotation(s):"
-                        " %s, %s" % (existing_annotation, new_annotations)
+                        " %s, %s",
+                        existing_annotation,
+                        new_annotations,
                     )
         self.new_annotation.clear()
-        logging.info(
+        log.info(
             "Finished merging new annotations to existing annotations under following"
-            " prefix: %s" % self.prefix
+            " prefix: %s",
+            self.prefix
         )
 
     def join_annotations(self, merge_fields):
@@ -377,11 +368,11 @@ class AnnotationMerge:
             existing_annotation[self.prefix] = []
             for node in new_nodes:
                 existing_annotation[self.prefix].append(self.new_annotation[node])
-                if self.debug:
-                    logging.debug(
-                        "Merged a pair of annotations: %s, %s"
-                        % (existing_annotation, self.new_annotation[node])
-                    )
+                log.debug(
+                    "Merged a pair of annotations: %s, %s",
+                    existing_annotation,
+                    self.new_annotation[node],
+                )
         if pruned_existing_to_new:
             self.existing_to_new_edges = [pruned_existing_to_new]
         else:

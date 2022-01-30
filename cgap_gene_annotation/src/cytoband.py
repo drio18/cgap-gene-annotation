@@ -91,9 +91,9 @@ def add_cytoband_field(record, prefix, cytoband_metadata, reference_locations):
     if prefix_record and chromosome and start is not None and end is not None:
         chromosome_cytobands = reference_locations.get(chromosome, [])
         if not chromosome_cytobands:
-            log.info(
+            log.debug(
                 "Chromosome (%s) not found in cytobands from reference file for prefix"
-                " %s",
+                " (%s)",
                 chromosome,
                 prefix,
             )
@@ -107,8 +107,8 @@ def add_cytoband_field(record, prefix, cytoband_metadata, reference_locations):
             elif start_found and end <= cytoband_start:
                 break
     else:
-        log.info(
-            "Could not add cytoband information due to missing information for record"
+        log.debug(
+            "Could not add cytoband information due to missing information for record:"
             " %s",
             record,
         )
