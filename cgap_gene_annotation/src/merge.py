@@ -179,8 +179,8 @@ class AnnotationMerge:
             log.info(
                 "%s existing annotations could not be matched to new annotations using"
                 " given merge conditions for prefix: %s",
-                self.prefix,
                 len(self.existing_to_new_edges[0]),
+                self.prefix,
             )
             if self.debug:
                 for existing_node, new_nodes in self.existing_to_new_edges[0].items():
