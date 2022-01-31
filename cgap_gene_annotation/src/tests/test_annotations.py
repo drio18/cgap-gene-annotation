@@ -50,15 +50,39 @@ UPDATE_JSON_INVALID = {
     constants.REMOVE: [{"foo": "bar"}],
 }
 FILE_PATH = "dir/file"
-METADATA = {
-    PREFIX_1: {
-        "foo": "bar",
-        "fu": "bur",
+METADATA = [
+    {
+        constants.PARSER: {constants.TYPE: "foo"},
+        constants.PREFIX: PREFIX_1,
     },
-    PREFIX_2: {"something": "else"},
-}
+    {
+        constants.PARSER: {constants.TYPE: "bar"},
+        constants.PREFIX: PREFIX_2,
+    },
+]
+METADATA_WITHOUT_PREFIX_1 = [
+    {
+        constants.PARSER: {constants.TYPE: "bar"},
+        constants.PREFIX: PREFIX_2,
+    },
+]
+METADATA_WITHOUT_PREFIX_2 = [
+    {
+        constants.PARSER: {constants.TYPE: "foo"},
+        constants.PREFIX: PREFIX_1,
+    },
+]
 ANNOTATIONS = [
     {PREFIX_1: [{"a": "b"}], PREFIX_2: ["c"]},
+    {
+        PREFIX_1: [{"d": "e"}],
+    },
+]
+ANNOTATIONS_WITHOUT_PREFIX_1 = [
+    {PREFIX_2: ["c"]},
+]
+ANNOTATIONS_WITHOUT_PREFIX_2 = [
+    {PREFIX_1: [{"a": "b"}]},
     {
         PREFIX_1: [{"d": "e"}],
     },
@@ -113,6 +137,7 @@ def simple_parser(records):
     class SimpleParser:
         def __init__(self, records):
             self.records = records
+            self.file_path = "Foo"
 
         def get_records(self):
             for record in self.records:
@@ -365,9 +390,9 @@ class TestGeneAnnotation:
     @pytest.mark.parametrize(
         "file_contents,expected_metadata,expected_annotations",
         [
-            ({}, {}, []),
+            ({}, [], []),
             ({constants.METADATA: METADATA}, METADATA, []),
-            ({constants.ANNOTATION: ANNOTATIONS}, {}, ANNOTATIONS),
+            ({constants.ANNOTATION: ANNOTATIONS}, [], ANNOTATIONS),
             (
                 {constants.METADATA: METADATA, constants.ANNOTATION: ANNOTATIONS},
                 METADATA,
@@ -432,14 +457,23 @@ class TestGeneAnnotation:
             basic_gene_annotation.write_file()
             assert json.load(tmp) == ANNOTATION_FILE_CONTENTS
 
-    @pytest.mark.parametrize("identifier", [PREFIX_1, PREFIX_2, "foo"])
-    def test_remove_identifier(self, identifier, basic_gene_annotation):
+    @pytest.mark.parametrize(
+        "identifier,expected_metadata,expected_annotations",
+        [
+            ("foo", METADATA, ANNOTATIONS),
+            (PREFIX_1, METADATA_WITHOUT_PREFIX_1, ANNOTATIONS_WITHOUT_PREFIX_1),
+            (PREFIX_2, METADATA_WITHOUT_PREFIX_2, ANNOTATIONS_WITHOUT_PREFIX_2),
+        ],
+    )
+    def test_remove_identifier(
+        self, identifier, expected_metadata, expected_annotations, basic_gene_annotation
+    ):
         """Test removal of given identifier from class' annotations
         and metadata dictionaries.
         """
         basic_gene_annotation.remove_identifier(identifier)
-        assert identifier not in basic_gene_annotation.annotations
-        assert identifier not in basic_gene_annotation.metadata
+        assert basic_gene_annotation.metadata == expected_metadata
+        assert basic_gene_annotation.annotations == expected_annotations
 
     @pytest.mark.parametrize(
         "prefix_list",
@@ -540,7 +574,11 @@ class TestGeneAnnotation:
                         mock_add_cytoband_field.call_args_list
                     )
                     mock_add_cytoband_field.assert_called_with(
-                        annotations[-1], PREFIX_1, cytoband_metadata, cytoband_locations
+                        annotations[-1],
+                        PREFIX_1,
+                        cytoband_metadata,
+                        cytoband_locations,
+                        debug=False,
                     )
 
     @mock.patch("cgap_gene_annotation.src.annotations.GeneAnnotation.add_source")

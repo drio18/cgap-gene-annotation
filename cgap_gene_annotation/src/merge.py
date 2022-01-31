@@ -179,8 +179,8 @@ class AnnotationMerge:
             log.info(
                 "%s existing annotations could not be matched to new annotations using"
                 " given merge conditions for prefix: %s",
-                len(self.existing_to_new_edges[0]),
                 self.prefix,
+                len(self.existing_to_new_edges[0]),
             )
             if self.debug:
                 for existing_node, new_nodes in self.existing_to_new_edges[0].items():
@@ -189,8 +189,9 @@ class AnnotationMerge:
                     for node in new_nodes:
                         new_annotations.append(self.new_annotation[node])
                     log.debug(
-                        "Could not match existing annotation with new annotation(s):"
-                        "\n%s,\n%s",
+                        "Could not match existing annotation with new annotation(s)"
+                        " for prefix: %s\n%s,\n%s",
+                        self.prefix,
                         json.dumps(existing_annotation, indent=4),
                         json.dumps(new_annotations, indent=4),
                     )
@@ -375,7 +376,17 @@ class AnnotationMerge:
         for existing_node, new_nodes in existing_to_new_edges.items():
             merge_count += 1
             existing_annotation = self.existing_annotation[existing_node]
-            existing_annotation[self.prefix] = []
+            existing_prefix_value = existing_annotation.get(self.prefix)
+            if existing_prefix_value is None:
+                existing_annotation[self.prefix] = []
+            elif not isinstance(existing_prefix_value, list):
+                log.error(
+                    "Received an unexpected value (expected an array) for prefix %s"
+                    " and could not complete merge for following annotation:\n%s",
+                    self.prefix,
+                    json.dumps(existing_annotation, indent=4),
+                )
+                continue
             for node in new_nodes:
                 existing_annotation[self.prefix].append(self.new_annotation[node])
                 if self.debug:

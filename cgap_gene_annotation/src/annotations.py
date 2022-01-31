@@ -462,13 +462,19 @@ class GeneAnnotation:
         """
         removal_count = 0
         cytoband_removal_count = 0
-        for item in self.annotations:
+        annotation_indices_to_remove = []
+        for idx, item in enumerate(self.annotations):
             if item.get(identifier):
                 del item[identifier]
                 removal_count += 1
             if item.get(constants.CYTOBAND, {}).get(identifier):
                 del item[constants.CYTOBAND][identifier]
                 cytoband_removal_count += 1
+            if not item:
+                annotation_indices_to_remove.append(idx)
+        if annotation_indices_to_remove:
+            for idx in annotation_indices_to_remove:
+                del self.annotations[idx]
         if removal_count:
             log.info(
                 "Removed %s information from %s annotations", identifier, removal_count
@@ -525,7 +531,7 @@ class GeneAnnotation:
             annotation (e.g. parsing, merging, etc.)
         :type annotation_metadata: dict
         """
-        self.metadata += annotation_metadata
+        self.metadata.append(annotation_metadata)
         files = annotation_metadata.get(constants.FILES, [])
         prefix = annotation_metadata.get(constants.PREFIX)
         merge_info = annotation_metadata.get(constants.MERGE)
