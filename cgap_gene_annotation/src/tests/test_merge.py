@@ -13,6 +13,7 @@ EXISTING_ANNOTATION = [
     {"foo": {"bar": "three"}},
     {"foo": {"bar": ["three", "four"]}},
     {"foo": {"bar": "five"}},
+    {"foo": "bar", "fi": "one"},
 ]
 NEW_ANNOTATION = [
     {"bur": "zero"},
@@ -23,7 +24,7 @@ NEW_ANNOTATION = [
     {"fu": {"bur": "five"}},
 ]
 NEW_PREFIX = "Test"
-PRIMARY_MERGE_FIELDS = ("foo.bar", "fu.bur")
+PRIMARY_MERGE_FIELDS = (["foo.bar", "fi"], "fu.bur")
 SECONDARY_MERGE_FIELDS = ("waldo", "thud")
 MERGED_PRIMARY_FIELDS_MANY_TO_MANY = [
     EXISTING_ANNOTATION[0],
@@ -33,51 +34,57 @@ MERGED_PRIMARY_FIELDS_MANY_TO_MANY = [
     {**EXISTING_ANNOTATION[4], **{NEW_PREFIX: [NEW_ANNOTATION[3]]}},
     {**EXISTING_ANNOTATION[5], **{NEW_PREFIX: [NEW_ANNOTATION[3], NEW_ANNOTATION[4]]}},
     {**EXISTING_ANNOTATION[6], **{NEW_PREFIX: [NEW_ANNOTATION[5]]}},
+    {**EXISTING_ANNOTATION[7], **{NEW_PREFIX: [NEW_ANNOTATION[1], NEW_ANNOTATION[2]]}},
 ]
 MERGED_PRIMARY_FIELDS_MANY_TO_ONE = [
     EXISTING_ANNOTATION[0],
-    {**EXISTING_ANNOTATION[1]},
+    EXISTING_ANNOTATION[1],
     {**EXISTING_ANNOTATION[2], **{NEW_PREFIX: [NEW_ANNOTATION[2]]}},
     {**EXISTING_ANNOTATION[3], **{NEW_PREFIX: [NEW_ANNOTATION[3]]}},
     {**EXISTING_ANNOTATION[4], **{NEW_PREFIX: [NEW_ANNOTATION[3]]}},
-    {**EXISTING_ANNOTATION[5]},
+    EXISTING_ANNOTATION[5],
     {**EXISTING_ANNOTATION[6], **{NEW_PREFIX: [NEW_ANNOTATION[5]]}},
+    EXISTING_ANNOTATION[7],
 ]
 MERGED_PRIMARY_FIELDS_ONE_TO_MANY = [
     EXISTING_ANNOTATION[0],
-    {**EXISTING_ANNOTATION[1], **{NEW_PREFIX: [NEW_ANNOTATION[1]]}},
-    {**EXISTING_ANNOTATION[2]},
-    {**EXISTING_ANNOTATION[3]},
-    {**EXISTING_ANNOTATION[4]},
+    EXISTING_ANNOTATION[1],
+    EXISTING_ANNOTATION[2],
+    EXISTING_ANNOTATION[3],
+    EXISTING_ANNOTATION[4],
     {**EXISTING_ANNOTATION[5], **{NEW_PREFIX: [NEW_ANNOTATION[4]]}},
     {**EXISTING_ANNOTATION[6], **{NEW_PREFIX: [NEW_ANNOTATION[5]]}},
+    EXISTING_ANNOTATION[7],
 ]
 MERGED_PRIMARY_FIELDS_ONE_TO_ONE = [
     EXISTING_ANNOTATION[0],
-    {**EXISTING_ANNOTATION[1]},
-    {**EXISTING_ANNOTATION[2]},
-    {**EXISTING_ANNOTATION[3]},
-    {**EXISTING_ANNOTATION[4]},
-    {**EXISTING_ANNOTATION[5]},
+    EXISTING_ANNOTATION[1],
+    EXISTING_ANNOTATION[2],
+    EXISTING_ANNOTATION[3],
+    EXISTING_ANNOTATION[4],
+    EXISTING_ANNOTATION[5],
     {**EXISTING_ANNOTATION[6], **{NEW_PREFIX: [NEW_ANNOTATION[5]]}},
+    EXISTING_ANNOTATION[7],
 ]
 MERGED_PRIMARY_AND_SECONDARY_FIELDS_MANY_TO_MANY = [
     EXISTING_ANNOTATION[0],
-    {**EXISTING_ANNOTATION[1]},
-    {**EXISTING_ANNOTATION[2]},
+    EXISTING_ANNOTATION[1],
+    EXISTING_ANNOTATION[2],
     {**EXISTING_ANNOTATION[3], **{NEW_PREFIX: [NEW_ANNOTATION[3]]}},
-    {**EXISTING_ANNOTATION[4]},
-    {**EXISTING_ANNOTATION[5]},
-    {**EXISTING_ANNOTATION[6]},
+    EXISTING_ANNOTATION[4],
+    EXISTING_ANNOTATION[5],
+    EXISTING_ANNOTATION[6],
+    EXISTING_ANNOTATION[7],
 ]
 MERGED_PRIMARY_THEN_SECONDARY_FIELDS_ONE_TO_ONE = [
     EXISTING_ANNOTATION[0],
-    {**EXISTING_ANNOTATION[1]},
-    {**EXISTING_ANNOTATION[2]},
+    EXISTING_ANNOTATION[1],
+    EXISTING_ANNOTATION[2],
     {**EXISTING_ANNOTATION[3], **{NEW_PREFIX: [NEW_ANNOTATION[3]]}},
-    {**EXISTING_ANNOTATION[4]},
-    {**EXISTING_ANNOTATION[5]},
+    EXISTING_ANNOTATION[4],
+    EXISTING_ANNOTATION[5],
     {**EXISTING_ANNOTATION[6], **{NEW_PREFIX: [NEW_ANNOTATION[5]]}},
+    EXISTING_ANNOTATION[7],
 ]
 
 
@@ -125,7 +132,7 @@ def existing_to_new_primary_edges(remove_fields=None):
 
     Not a fixture to allow customization and call within paramtrize.
     """
-    edges = {1: {1, 2}, 2: {2}, 3: {3}, 4: {3}, 5: {3, 4}, 6: {5}}
+    edges = {1: {1, 2}, 2: {2}, 3: {3}, 4: {3}, 5: {3, 4}, 6: {5}, 7: {1, 2}}
     if remove_fields:
         for field in remove_fields:
             if field in edges:
@@ -139,7 +146,7 @@ def new_to_existing_primary_edges(remove_fields=None):
 
     Not a fixture to allow customization and call within paramtrize.
     """
-    edges = {1: {1}, 2: {1, 2}, 3: {3, 4, 5}, 4: {5}, 5: {6}}
+    edges = {1: {1, 7}, 2: {1, 2, 7}, 3: {3, 4, 5}, 4: {5}, 5: {6}}
     if remove_fields:
         for field in remove_fields:
             if field in edges:
@@ -345,11 +352,11 @@ class TestAnnotationMerge:
                 [{5: {3}, 2: {2}}],
                 [
                     {6: {1}, 2: {2}},
-                    existing_to_new_primary_edges(remove_fields=[1, 3, 4, 5]),
+                    existing_to_new_primary_edges(remove_fields=[1, 3, 4, 5, 7]),
                 ],
                 [
                     {5: {3}, 2: {2}},
-                    new_to_existing_primary_edges(remove_fields=[1, 3, 4]),
+                    new_to_existing_primary_edges(remove_fields=[1, 3, 4, 7]),
                 ],
             ),
         ],
@@ -377,9 +384,9 @@ class TestAnnotationMerge:
     @pytest.mark.parametrize(
         "merge_field_list,expected",
         [
-            ([("foo", "bar")], ["foo", "bar"]),
-            ([("foo.bar", "bar.foo")], ["foo.bar", "bar.foo"]),
-            ([("foo", "bar"), ("bar", "foo")], ["foo", "bar"]),
+            ([("foo", "bar")], [["foo"], ["bar"]]),
+            ([("foo.bar", "bar.foo")], [["foo.bar"], ["bar.foo"]]),
+            ([("foo", "bar"), ("bar", "foo")], [["foo"], ["bar"]]),
         ],
     )
     def test_get_merge_fields(self, merge_field_list, expected, empty_merge):
@@ -392,42 +399,50 @@ class TestAnnotationMerge:
         "annotation,key,indices,expected",
         [
             ([], [], None, {}),
-            ([{"foo": "bar"}], "", None, {}),
-            ([{"foo": "bar"}], "foo", None, {"bar": {0}}),
-            ([{"foo": "bar"}], "fu", None, {}),
-            ([{"foo": "bar"}, {"fu": "bar"}], "foo", None, {"bar": {0}}),
-            ([{"foo": "bar"}, {"foo": "bur"}], "foo", None, {"bar": {0}, "bur": {1}}),
+            ([{"foo": "bar"}], [""], None, {}),
+            ([{"foo": "bar"}], ["foo"], None, {"bar": {0}}),
+            ([{"foo": "bar"}], ["fu"], None, {}),
+            ([{"foo": "bar"}], ["foo", "fu"], None, {"bar": {0}}),
+            ([{"foo": "bar"}, {"fu": "bar"}], ["foo"], None, {"bar": {0}}),
+            ([{"foo": "bar"}, {"fu": "bar"}], ["foo", "fu"], None, {"bar": {0, 1}}),
+            ([{"foo": "bar"}, {"foo": "bur"}], ["foo"], None, {"bar": {0}, "bur": {1}}),
             (
                 [{"foo": "bar"}, {"foo": "bur"}, {"foo": "bar"}],
-                "foo",
+                ["foo"],
                 None,
                 {"bar": {0, 2}, "bur": {1}},
             ),
             (
                 [{"foo": "bar"}, {"foo": "bur"}, {"foo": "bar"}],
-                "foo",
+                ["foo"],
                 [0],
                 {"bar": {0}},
             ),
             (
                 [{"foo": "bar"}, {"foo": "bur"}, {"foo": "bar"}],
-                "foo",
+                ["foo"],
                 [0, 2],
                 {"bar": {0, 2}},
             ),
             (
                 [{"foo": "bar"}, {"foo": "bur"}, {"foo": "bar"}],
-                "foo",
+                ["foo"],
                 [0, 2],
                 {"bar": {0, 2}},
             ),
             (
                 [{"foo": "bar"}, {"foo": "bur"}, {"foo": "bar"}],
-                "foo",
+                ["foo"],
                 [1],
                 {"bur": {1}},
             ),
-            ([{"fu": "bar"}, {"foo": "bur"}, {"foo": "bar"}], "foo", [0], {}),
+            ([{"fu": "bar"}, {"foo": "bur"}, {"foo": "bar"}], ["foo"], [0], {}),
+            (
+                [{"fu": "bar"}, {"foo": "bur"}, {"foo": "bar"}],
+                ["foo", "fu"],
+                [0],
+                {"bar": {0}},
+            ),
         ],
     )
     def test_match_value_to_annotation(
@@ -453,6 +468,8 @@ class TestAnnotationMerge:
             ({"foo": {1, 2}}, {"foo": {1}}, ({1: {1}, 2: {1}}, {1: {1, 2}})),
             ({"foo": {1}}, {"foo": {1, 2}}, ({1: {1, 2}}, {1: {1}, 2: {1}})),
             ({"foo": {1}}, {"foo": {1, 2}}, ({1: {1, 2}}, {1: {1}, 2: {1}})),
+            ({"foo": {1}, "bar": {1}}, {"foo": {1}, "bar": {2}}, ({1: {1, 2}}, {1: {1},
+                2: {1}})),
         ],
     )
     def test_match_annotations(self, existing_table, new_table, expected, empty_merge):
@@ -556,15 +573,25 @@ class TestAnnotationMerge:
             (
                 False,
                 True,
-                ({2: {1, 2}, 3: {3, 4, 5}}, {1: {2}, 2: {2}, 3: {3}, 4: {3}, 5: {3}}),
+                (
+                    {1: {1, 7}, 2: {1, 2, 7}, 3: {3, 4, 5}},
+                    {1: {1, 2}, 7: {1, 2}, 2: {2}, 3: {3}, 4: {3}, 5: {3}},
+                ),
             ),
-            (True, False, ({1: {1}, 2: {1}, 3: {5}, 4: {5}}, {1: {1, 2}, 5: {3, 4}})),
+            (
+                True,
+                False,
+                (
+                    {1: {1, 7}, 2: {1, 7}, 3: {5}, 4: {5}},
+                    {1: {1, 2}, 5: {3, 4}, 7: {1, 2}}
+                )
+            ),
             (
                 True,
                 True,
                 (
-                    {1: {1}, 2: {1, 2}, 3: {3, 4, 5}, 4: {5}},
-                    {1: {1, 2}, 2: {2}, 3: {3}, 4: {3}, 5: {3, 4}},
+                    {1: {1, 7}, 2: {1, 2, 7}, 3: {3, 4, 5}, 4: {5}},
+                    {1: {1, 2}, 2: {2}, 3: {3}, 4: {3}, 5: {3, 4}, 7: {1, 2}},
                 ),
             ),
         ],

@@ -215,17 +215,17 @@ class AnnotationMerge:
         :param merge_fields: The merge fields to match on.
         :type merge_fields: list(list(str))
         """
-        existing_key, new_key = self.get_merge_fields(merge_fields)
+        existing_keys, new_keys = self.get_merge_fields(merge_fields)
         existing_indices = None
         new_indices = None
         if self.existing_to_new_edges:
             existing_indices = list(self.existing_to_new_edges[0].keys())
             new_indices = list(self.new_to_existing_edges[0].keys())
         existing_value_map = self.match_value_to_annotation(
-            self.existing_annotation, existing_key, indices=existing_indices
+            self.existing_annotation, existing_keys, indices=existing_indices
         )
         new_value_map = self.match_value_to_annotation(
-            self.new_annotation, new_key, indices=new_indices
+            self.new_annotation, new_keys, indices=new_indices
         )
         existing_to_new_matches, new_to_existing_matches = self.match_annotations(
             existing_value_map, new_value_map
@@ -239,18 +239,24 @@ class AnnotationMerge:
         :param merge_field_list: The merge fields.
         :type merge_field_list: list(list(str))
         :returns: First merge fields off list.
-        :rtype: list(str)
+        :rtype: list(list(str))
         """
+        result = []
         merge_fields = merge_field_list.pop(0)
-        return [x.strip() for x in merge_fields]
+        for field in merge_fields:
+            if isinstance(field, str):
+                result.append([field.strip()])
+            elif isinstance(field, list):
+                result.append([x.strip() for x in field])
+        return result
 
-    def match_value_to_annotation(self, annotation, field, indices=None):
+    def match_value_to_annotation(self, annotation, fields, indices=None):
         """Match annotation field values to annotation indices.
 
         :param annotation: Complete annotations.
         :type annotation: list(dict)
-        :param field: The field to get from each annotation.
-        :type field: str
+        :param fields: The field(s) to get from each annotation.
+        :type fields: list(str)
         :param indices: Indices of the annotations for which to match
             field values.
         :type indices: list(int)
@@ -259,16 +265,17 @@ class AnnotationMerge:
         :rtype: dict
         """
         matches = {}
-        if field:
-            if indices:
-                for idx in indices:
-                    item = annotation[idx]
-                    item_value = nested_getter(item, field)
-                    self.add_values_to_sets(item_value, [idx], matches)
-            else:
-                for idx, item in enumerate(annotation):
-                    item_value = nested_getter(item, field)
-                    self.add_values_to_sets(item_value, [idx], matches)
+        if fields:
+            for field in fields:
+                if indices:
+                    for idx in indices:
+                        item = annotation[idx]
+                        item_value = nested_getter(item, field)
+                        self.add_values_to_sets(item_value, [idx], matches)
+                else:
+                    for idx, item in enumerate(annotation):
+                        item_value = nested_getter(item, field)
+                        self.add_values_to_sets(item_value, [idx], matches)
         return matches
 
     def match_annotations(self, existing_value_map, new_value_map):
@@ -411,7 +418,7 @@ class AnnotationMerge:
 
         If merge mapping contains a uniqueness constraint (e.g. a
         one-to-many), identify the matched edges that don't meet that
-        constraint and remove then from both the existing-to-new and
+        constraint and remove them from both the existing-to-new and
         the new-to-existing match tables.
 
         :returns: The matched edges that did not meet the mapping

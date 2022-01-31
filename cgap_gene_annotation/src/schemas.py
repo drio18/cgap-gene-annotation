@@ -177,7 +177,18 @@ ANNOTATION_SOURCE = {
                     constants.TYPE: constants.ARRAY,
                     constants.ITEMS: {
                         constants.TYPE: constants.ARRAY,
-                        constants.ITEMS: {constants.TYPE: constants.STRING},
+                        constants.ITEMS: {
+                            constants.ONE_OF: [
+                                {constants.TYPE: constants.STRING},
+                                {
+                                    constants.TYPE: constants.ARRAY,
+                                    constants.ITEMS: {
+                                        constants.TYPE: constants.STRING,
+                                    },
+                                    constants.MIN_ITEMS: 1,
+                                },
+                            ]
+                        },
                         constants.MIN_ITEMS: 2,
                         constants.MAX_ITEMS: 2,
                     },
@@ -190,7 +201,18 @@ ANNOTATION_SOURCE = {
                     constants.TYPE: constants.ARRAY,
                     constants.ITEMS: {
                         constants.TYPE: constants.ARRAY,
-                        constants.ITEMS: {constants.TYPE: constants.STRING},
+                        constants.ITEMS: {
+                            constants.ONE_OF: [
+                                {constants.TYPE: constants.STRING},
+                                {
+                                    constants.TYPE: constants.ARRAY,
+                                    constants.ITEMS: {
+                                        constants.TYPE: constants.STRING,
+                                    },
+                                    constants.MIN_ITEMS: 1,
+                                },
+                            ]
+                        },
                         constants.MIN_ITEMS: 2,
                         constants.MAX_ITEMS: 2,
                     },
