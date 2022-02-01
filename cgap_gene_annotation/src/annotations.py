@@ -60,6 +60,7 @@ class SourceAnnotation:
         self,
         parser,
         filter_fields=None,
+        filter_out_fields=None,
         fields_to_keep=None,
         fields_to_drop=None,
         split_fields=None,
@@ -92,6 +93,7 @@ class SourceAnnotation:
         """
         self.parser = parser
         self.filter_fields = filter_fields
+        self.filter_out_fields = filter_out_fields
         self.fields_to_keep = fields_to_keep
         self.fields_to_drop = fields_to_drop
         self.split_fields = split_fields
@@ -123,6 +125,8 @@ class SourceAnnotation:
                 self.make_field_replacements(record)
             if self.filter_fields:
                 self.filter_record(record)
+            if self.filter_out_fields:
+                self.filter_out_record(record)
             if self.fields_to_keep:
                 record = self.retain_fields(record)
             elif self.fields_to_drop:
@@ -146,7 +150,7 @@ class SourceAnnotation:
     def filter_record(self, record):
         """Determine record inclusion/exclusion in annotation.
 
-        Given fields and permissable values, only keep the record if
+        Given fields and permissible values, only keep the record if
         all fields are present and record's values for those fields are
         all permitted.
 
@@ -165,6 +169,27 @@ class SourceAnnotation:
             elif isinstance(field_value, list):
                 intersection = set(field_value).intersection(set(permissible_values))
                 if not intersection:
+                    record.clear()
+                    break
+
+    def filter_out_record(self, record):
+        """Determine record inclusion/exclusion in annotation.
+
+        Given fields and impermissible values, only keep the record if
+        fields' values are not explicitly disallowed.
+
+        :param record: Parsed record from source file.
+        :type record: dict
+        """
+        for field, impermissible_values in self.filter_out_fields.items():
+            field_value = nested_getter(record, field, string_return=True)
+            if isinstance(field_value, str):
+                if field_value in impermissible_values:
+                    record.clear()
+                    break
+            elif isinstance(field_value, list):
+                intersection = set(field_value).intersection(set(impermissible_values))
+                if intersection:
                     record.clear()
                     break
 

@@ -30,8 +30,18 @@
                             "type": "string"
                         }
                     },
-                    "filter": {
+                    "filter_in": {
                         "description": "Fields to filter for inclusion in the final annotation",
+                        "type": "object",
+                        "additionalProperties": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "filter_out": {
+                        "description": "Fields to filter for exclusion from the final annotation",
                         "type": "object",
                         "additionalProperties": {
                             "type": "array",
@@ -158,7 +168,18 @@
                                 "items": {
                                     "type": "array",
                                     "items": {
-                                        "type": "string"
+                                        "oneOf": [
+                                            {
+                                                "type": "string"
+                                            },
+                                            {
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "string"
+                                                },
+                                                "minItems": 1
+                                            }
+                                        ]
                                     },
                                     "minItems": 2,
                                     "maxItems": 2
@@ -170,7 +191,18 @@
                                 "items": {
                                     "type": "array",
                                     "items": {
-                                        "type": "string"
+                                        "oneOf": [
+                                            {
+                                                "type": "string"
+                                            },
+                                            {
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "string"
+                                                },
+                                                "minItems": 1
+                                            }
+                                        ]
                                     },
                                     "minItems": 2,
                                     "maxItems": 2
@@ -292,8 +324,18 @@
                             "type": "string"
                         }
                     },
-                    "filter": {
+                    "filter_in": {
                         "description": "Fields to filter for inclusion in the final annotation",
+                        "type": "object",
+                        "additionalProperties": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "filter_out": {
+                        "description": "Fields to filter for exclusion from the final annotation",
                         "type": "object",
                         "additionalProperties": {
                             "type": "array",
@@ -420,7 +462,18 @@
                                 "items": {
                                     "type": "array",
                                     "items": {
-                                        "type": "string"
+                                        "oneOf": [
+                                            {
+                                                "type": "string"
+                                            },
+                                            {
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "string"
+                                                },
+                                                "minItems": 1
+                                            }
+                                        ]
                                     },
                                     "minItems": 2,
                                     "maxItems": 2
@@ -432,7 +485,18 @@
                                 "items": {
                                     "type": "array",
                                     "items": {
-                                        "type": "string"
+                                        "oneOf": [
+                                            {
+                                                "type": "string"
+                                            },
+                                            {
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "string"
+                                                },
+                                                "minItems": 1
+                                            }
+                                        ]
                                     },
                                     "minItems": 2,
                                     "maxItems": 2

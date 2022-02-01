@@ -43,6 +43,16 @@ ANNOTATION_SOURCE = {
                 constants.ITEMS: {constants.TYPE: constants.STRING},
             },
         },
+        constants.FILTER_OUT: {
+            constants.DESCRIPTION: (
+                "Fields to filter for exclusion from the final annotation"
+            ),
+            constants.TYPE: constants.OBJECT,
+            constants.ADDITIONAL_PROPERTIES: {
+                constants.TYPE: constants.ARRAY,
+                constants.ITEMS: {constants.TYPE: constants.STRING},
+            },
+        },
         constants.KEEP_FIELDS: {
             constants.DESCRIPTION: "Fields to add from the annotation",
             constants.TYPE: constants.ARRAY,

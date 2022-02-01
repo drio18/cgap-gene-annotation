@@ -25,7 +25,8 @@ REMOVE = "remove"
 
 FILES = "files"
 
-FILTER = "filter"
+FILTER = "filter_in"
+FILTER_OUT = "filter_out"
 
 KEEP_FIELDS = "keep"
 

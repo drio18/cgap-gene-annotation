@@ -183,6 +183,26 @@ class TestSourceAnnotation:
         assert record == expected
 
     @pytest.mark.parametrize(
+        "filter_out_fields,expected",
+        [
+            ({}, create_record()),
+            ({FIELD_1: [VALUE_1]}, {}),
+            ({FIELD_1: ["bar"]}, create_record()),
+            ({FIELD_2: [VALUE_2]}, {}),
+            ({FIELD_2: ["bar"]}, create_record()),
+            ({FIELD_1: ["bar"], FIELD_2: [VALUE_2]}, {}),
+        ]
+    )
+    def test_filter_out_record(self, filter_out_fields, expected, empty_annotation_source):
+        """Test entire record cleared or maintained when filtered by
+        given filter_out_fields.
+        """
+        empty_annotation_source.filter_out_fields = filter_out_fields
+        record = create_record()
+        empty_annotation_source.filter_out_record(record)
+        assert record == expected
+
+    @pytest.mark.parametrize(
         "fields_to_keep,expected",
         [
             ([], {}),
