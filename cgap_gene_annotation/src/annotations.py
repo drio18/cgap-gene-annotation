@@ -586,7 +586,9 @@ class GeneAnnotation:
             else:
                 if base_annotation:
                     log.info(
-                        "Adding initial annotations from source file: %s", file_path
+                        "Adding %s initial annotations from source file: %s",
+                        len(source_annotation),
+                        file_path,
                     )
                     self.annotations += [
                         {prefix: [entry]} for entry in source_annotation
