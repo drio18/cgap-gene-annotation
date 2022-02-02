@@ -402,7 +402,7 @@ class AnnotationMerge:
                         json.dumps(existing_annotation, indent=4),
                         json.dumps(self.new_annotation[node], indent=4),
                     )
-        log.info("Merged %s annotations for prefix: %s", merge_count, self.prefix)
+        log.info("Merged to %s annotations for prefix: %s", merge_count, self.prefix)
         if pruned_existing_to_new:
             self.existing_to_new_edges = [pruned_existing_to_new]
         else:

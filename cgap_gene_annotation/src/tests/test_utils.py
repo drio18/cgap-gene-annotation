@@ -153,7 +153,9 @@ class TestFileHandler:
                 assert result == []
             else:
                 assert result == [file_content]
-            mocked_file.assert_called_once_with(file_path, mode=mode, encoding=encoding)
+            mocked_file.assert_called_once_with(
+                file_path, mode=mode, encoding=encoding, errors="replace"
+            )
 
     @pytest.mark.parametrize(
         "file_path,binary,side_effect",
@@ -189,7 +191,9 @@ class TestFileHandler:
                 assert result == []
             else:
                 assert result == [file_content]
-            mocked_file.assert_called_once_with(file_path, mode=mode, encoding=encoding)
+            mocked_file.assert_called_once_with(
+                file_path, mode=mode, encoding=encoding, errors="replace"
+            )
 
     @pytest.mark.parametrize(
         "file_path,expected",

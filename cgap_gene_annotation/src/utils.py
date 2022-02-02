@@ -103,7 +103,7 @@ def nested_getter(item, field_to_get, string_return=False):
         for sub_item in item:
             sub_result = nested_getter(sub_item, field_to_get)
             result += sub_result
-        result = list(set(result))
+        result = list(dict.fromkeys(result))
     elif isinstance(item, dict):
         # Allow field names to contain FIELD_SEPARATOR in terminal
         # field but not higher-level field, e.g. can have an item with
@@ -195,12 +195,12 @@ class FileHandler:
         try:
             if self.binary:
                 with open_function(
-                    self.file_path, mode="rb", encoding="utf-8"
+                    self.file_path, mode="rb", encoding="utf-8", errors="replace"
                 ) as file_handle:
                     yield file_handle
             else:
                 with open_function(
-                    self.file_path, mode="rt", encoding="utf-8-sig"
+                    self.file_path, mode="rt", encoding="utf-8-sig", errors="replace"
                 ) as file_handle:
                     yield file_handle
         except (FileNotFoundError, OSError):

@@ -22,10 +22,14 @@ Classes:
 
 import csv
 import re
+import sys
 from xml.etree import ElementTree as ET
 
 from .utils import FileHandler
 
+
+# Enable csv.reader maximum to handle large fields
+csv.field_size_limit(sys.maxsize)
 
 # Parser kwarg names used in schema
 HEADER = "header"
@@ -704,7 +708,14 @@ class XMLParser:
                     if child_tag in existing_tag_value:
                         record[tag] = [existing_tag_value, value_to_add]
                     else:
-                        record[tag].update(value_to_add)
+                        if isinstance(existing_tag_value, dict):
+                            record[tag].update(value_to_add)
+                        elif isinstance(existing_tag_value, list):
+                            last_item = existing_tag_value[-1]
+                            if child_tag not in last_item:
+                                last_item.update(value_to_add)
+                            else:
+                                existing_tag_value.append(value_to_add)
         elif len(element) == 0 and element.text:
             text = element.text.strip()
             if self.list_identifier and (self.list_identifier in text):
